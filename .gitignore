@@ -1,0 +1,20 @@
+*.class
+*.jar
+*.war
+*.ear
+*.apk
+*.dex
+
+# Eclipse #
+target/
+bin/
+.classpath
+.project
+.settings/
+
+# Android #
+proguard/
+gen/
+libs/
+
+
