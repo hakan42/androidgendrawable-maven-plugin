@@ -1,0 +1,163 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Android Gen Drawable Maven plugin by avianey</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1 class="header">Android Gen Drawable Maven plugin</h1>
+        <p class="header"></p>
+
+        <ul>
+          <li class="download"><a class="buttons" href="https://github.com/avianey/androidgendrawable-maven-plugin/zipball/master">Download ZIP</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/avianey/androidgendrawable-maven-plugin/tarball/master">Download TAR</a></li>
+          <li><a class="buttons github" href="https://github.com/avianey/androidgendrawable-maven-plugin">View On GitHub</a></li>
+        </ul>
+
+        <p class="header">This project is maintained by <a class="header name" href="https://github.com/avianey">avianey</a></p>
+
+
+      </header>
+      <section>
+        <h1>Android Gen Drawable Maven plugin</h1>
+
+<p>A Maven plugin that allow you to generate density dependent drawable resources from a SVG file.  </p>
+
+<h2>Sample</h2>
+
+<p>The <a href="https://play.google.com/store/apps/details?id=net.androgames.level">Bubble Level</a> application use this plugin to generate density specific application icons from a SVG file at build time.<br>
+You can fork the project from GitHub <a href="https://github.com/avianey/Level">here</a>. </p>
+
+<h2>Bounding Box</h2>
+
+<p>SVG files use to generate density specific drawable must specify a width and height like this :</p>
+
+<pre><code>&lt;svg
+  x="0px"
+  y="0px"
+  width="96"
+  height="96"
+</code></pre>
+
+<p>This will define the bounding box of the drawable content. Everything that is drawn outside off this bounding box will no be rendered in the resulting transcoded PNG drawable. 
+Inkscape provides a way to make the SVG bounding bow match the content edges. 
+If you want the bounding box to be larger than the content (with extra border), you'll need to add an extra transparent shape that is larger than the content.  </p>
+
+<h2>How to use</h2>
+
+<h3>Maven installation</h3>
+
+<p>To use it in your Android Maven projects you need to add the following repository and plugin dependency to your project pom.xml.  </p>
+
+<p>The repository :  </p>
+
+<pre><code>&lt;repositories&gt;  
+  ...  
+  &lt;repository&gt;  
+    &lt;id&gt;Android Gen Drawable Maven plugin&lt;/id&gt;  
+    &lt;url&gt;http://avianey.github.com/androidgendrawable-maven-plugin/&lt;/url&gt;  
+  &lt;/repository&gt;  
+&lt;/repositories&gt;
+</code></pre>
+
+<p>The dependency :  </p>
+
+<pre><code>&lt;plugins&gt;
+  ...
+  &lt;plugin&gt;
+    &lt;groupId&gt;fr.avianey.modjo&lt;/groupId&gt;
+    &lt;artifactId&gt;androidgendrawable-maven-plugin&lt;/artifactId&gt;
+    &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+    &lt;configuration&gt;
+      &lt;from&gt;${project.basedir}/svg&lt;/from&gt;
+      &lt;to&gt;${project.basedir}/res&lt;/to&gt;
+      &lt;rename&gt;
+        &lt;level&gt;icon&lt;/level&gt;
+      &lt;/rename&gt;
+      &lt;createMissingDirectories&gt;true&lt;/createMissingDirectories&gt;
+      &lt;targetedDensities&gt;
+        &lt;density&gt;ldpi&lt;/density&gt;
+        &lt;density&gt;mdpi&lt;/density&gt;
+        &lt;density&gt;hdpi&lt;/density&gt;
+        &lt;density&gt;xhdpi&lt;/density&gt;
+      &lt;/targetedDensities&gt;
+      &lt;fallbackDensity&gt;mdpi&lt;/fallbackDensity&gt;
+      &lt;skipNoDpi&gt;true&lt;/skipNoDpi&gt;
+    &lt;/configuration&gt;
+    &lt;executions&gt;
+      &lt;execution&gt;
+        &lt;phase&gt;initialize&lt;/phase&gt;
+        &lt;goals&gt;
+          &lt;goal&gt;gen&lt;/goal&gt;
+        &lt;/goals&gt;
+      &lt;/execution&gt;
+    &lt;/executions&gt;
+  &lt;plugin&gt;
+&lt;/plugins&gt;
+</code></pre>
+
+<p>The groupId com.github.avianey was picked to avoid conflicts with other third parties ports published in open repositories.</p>
+
+<h3>Maven configuration</h3>
+
+<p>The plugin can be configured using the following options : </p>
+
+<h4>from</h4>
+
+<p>Path to the directory that contains the SVG files to generate drawable from.<br>
+SVG files MUST be named according the following rules :</p>
+
+<ul>
+<li>{name}-{density qualifier}.svg<br>
+</li>
+</ul><p>Generated drawable will be named :</p>
+
+<ul>
+<li>{name}.png<br>
+</li>
+</ul><p>The {density qualifier} part of the SVG file name indicates that the Bounding Box size defined in the  tag of the SVG file is the target size of the generated drawable for this {density qualifier}. Generated drawable for other densities are scaled according the 3:4:6:8 scaling ratio defined in the <a href="http://developer.android.com/guide/practices/screens_support.html">Supporting Multiple Screens section</a> of the Android developers site.   </p>
+
+<h4>to</h4>
+
+<p>Path to the Android res/ directory that contains the various drawable/ directories.</p>
+
+<h4>createMissingDirectories</h4>
+
+<p>"true" if you want the plugin to create missing drawable-(density)/ directories.</p>
+
+<h4>rename</h4>
+
+<p>Use this map to change the name of the generated drawable.</p>
+
+<h4>targetedDensities</h4>
+
+<p>List of the desired densities for the generated drawable.<br>
+If not specified, a drawable is generate for each supported density qualifier.</p>
+
+<h4>fallbackDensity</h4>
+
+<p>The density for unqualified drawable directories.</p>
+
+<h4>skipNoDpi</h4>
+
+<p>"true" if you don't want to generate drawables for "nodpi" qualified drawable directories.</p>
+      </section>
+      <footer>
+        <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+		
+  </body>
+</html>
