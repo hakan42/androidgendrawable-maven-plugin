@@ -37,8 +37,8 @@ import org.w3c.dom.svg.SVGDocument;
  * 
  * @goal gen
  */
+// TODO : delete PNG with the same name as target PNG
 // TODO : handle multiple output directories with no density classifier
-// TODO : set to use the bounding box or not : http://my2iu.blogspot.fr/2006/05/getting-svg-bounding-box-out-of-batik.html
 public class Gen extends AbstractMojo {
     
     /**
@@ -62,9 +62,11 @@ public class Gen extends AbstractMojo {
     private static class Input extends File {
         private static final long serialVersionUID = 1L;
         private Density density;
+        private String targetName;
         public Input(File file, Density density) throws IOException {
             super(file.getCanonicalPath());
             this.density = density;
+            this.targetName = FilenameUtils.getBaseName(getName()).toLowerCase().replaceAll("-" + density.name().toLowerCase(), "");
         }
     }
     
@@ -137,6 +139,8 @@ public class Gen extends AbstractMojo {
 
     /**
      * Use alternatives names for PNG resources
+     * Key = original svg name (without density prefix)
+     * Value = target name
      * 
      * @parameter 
      */
@@ -149,9 +153,13 @@ public class Gen extends AbstractMojo {
      */
     private String fallbackDensity;
     
-    // TODO : option to create or not missing drawable directories (default true)
-    // TODO : option to target only some densities
-
+    /**
+     * Density for drawable directories without density qualifier
+     * 
+     * @parameter default-value=""
+     */
+    private String highResIcon;
+    
     public void execute() throws MojoExecutionException {
         // validating
         final Set<Density> targetDensities_ = EnumSet.noneOf(Density.class);
@@ -259,16 +267,37 @@ public class Gen extends AbstractMojo {
         } else {
             throw new MojoExecutionException(from.getAbsolutePath() + " is not a valid input directory");
         }
+
+        Input _highResIcon = null;
+        Rectangle2D _highResIconBounds = null;
         
+        // create svg in res/* folder(s)
         for (Input svg : svgToConvert) {
             try {
                 Rectangle2D bounds = extractSVGBounds(svg);
+                if (highResIcon != null && highResIcon.equals(svg.targetName)) {
+                    _highResIcon = svg;
+                    _highResIconBounds = bounds;
+                }
                 for (Input destination : destinations) {
                     getLog().info("Transcoding " + svg.getName() + " to " + destination.getName());
                     transcode(svg, bounds, destination);
                 }
             } catch (MalformedURLException e) {
                 getLog().error(e);
+            } catch (IOException e) {
+                getLog().error(e);
+            } catch (TranscoderException e) {
+                getLog().error(e);
+            }
+        }
+        
+        // generates the play store high res icon
+        if (_highResIcon != null) {
+            try {
+                _highResIcon.targetName = "highResIcon";
+                // TODO : add a garbage density (NO_DENSITY)
+                transcode(_highResIcon, _highResIconBounds, new Input(new File("."), Density.MDPI), 512, 512);
             } catch (IOException e) {
                 getLog().error(e);
             } catch (TranscoderException e) {
@@ -306,11 +335,29 @@ public class Gen extends AbstractMojo {
      * @throws TranscoderException
      */
     private void transcode(Input svg, Rectangle2D bounds, Input dest) throws IOException, TranscoderException {
+        transcode(svg, bounds, dest, 
+                new Float(bounds.getWidth() * svg.density.ratio(dest.density)), 
+                new Float(bounds.getHeight() * svg.density.ratio(dest.density)));
+    }
+    
+    /**
+     * Given a desired width and height, transcodes a svg file to a PNG for the desired density
+     * @param svg
+     * @param bounds
+     * @param dest
+     * @param targetWidth
+     * @param targetHeight
+     * @throws IOException
+     * @throws TranscoderException
+     */
+    // TODO : center inside option
+    // TODO : preserve aspect ratio
+    private void transcode(Input svg, Rectangle2D bounds, Input dest, float targetWidth, float targetHeight) throws IOException, TranscoderException {
         PNGTranscoder t = new PNGTranscoder();
-        t.addTranscodingHint(PNGTranscoder.KEY_WIDTH, new Float(bounds.getWidth() * svg.density.ratio(dest.density)));
-        t.addTranscodingHint(PNGTranscoder.KEY_HEIGHT, new Float(bounds.getHeight() * svg.density.ratio(dest.density)));
+        t.addTranscodingHint(PNGTranscoder.KEY_WIDTH, new Float(targetWidth));
+        t.addTranscodingHint(PNGTranscoder.KEY_HEIGHT, new Float(targetHeight));
         TranscoderInput input = new TranscoderInput(svg.toURI().toURL().toString());
-        String outputName = FilenameUtils.getBaseName(svg.getName()).toLowerCase().replaceAll("-" + svg.density.name().toLowerCase(), "");
+        String outputName = svg.targetName;
         if (rename.containsKey(outputName)) {
             if (rename.get(outputName) != null && rename.get(outputName).matches("\\w+")) {
                 outputName = rename.get(outputName);
