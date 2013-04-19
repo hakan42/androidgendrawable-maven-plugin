@@ -34,7 +34,7 @@ The repository :
       ...  
       <repository>  
         <id>Android Gen Drawable Maven plugin</id>  
-        <url>http://avianey.github.com/androidgendrawable-maven-plugin/</url>  
+        <url>http://avianey.github.io/androidgendrawable-maven-plugin/</url>  
       </repository>  
     </repositories>
 
