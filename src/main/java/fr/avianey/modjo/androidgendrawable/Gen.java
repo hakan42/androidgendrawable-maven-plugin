@@ -8,7 +8,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,37 +43,10 @@ import org.w3c.dom.svg.SVGDocument;
 // TODO : delete PNG with the same name as target PNG
 // TODO : handle multiple output directories with no density classifier
 public class Gen extends AbstractMojo {
-    
-    /**
-     * Supported screen densities
-     */
-    private static enum Density {
-        LDPI(120),
-        MDPI(160),
-        HDPI(240),
-        XHDPI(320),
-        TVDPI(213);
-        private int dpi;
-        private Density(int dpi) {
-            this.dpi = dpi;
-        }
-        public double ratio(Density target) {
-            return (double) target.dpi / (double) this.dpi;
-        }
-    }
-    
-    private static class Input extends File {
-        private static final long serialVersionUID = 1L;
-        private Density density;
-        private String targetName;
-        public Input(File file, Density density) throws IOException {
-            super(file.getCanonicalPath());
-            this.density = density;
-            this.targetName = FilenameUtils.getBaseName(getName()).toLowerCase().replaceAll("-" + density.name().toLowerCase(), "");
-        }
-    }
-    
-    private static Pattern svgPattern = null;
+        
+    private static final Set<String> densityClassifiers = new HashSet<String>();
+    // TODO : matcher les pattern Android
+//    private static Pattern svgPattern = null;
     private static Pattern resPattern = null;
     static {
         StringBuilder sb = new StringBuilder("\\w+-");
@@ -84,15 +60,19 @@ public class Gen extends AbstractMojo {
                 first = false;
             }
             db.append(density.name());
+            densityClassifiers.add(density.name().toLowerCase());
         }
         db.append(")");
         tb.append(db.toString());
         sb.append(db.toString());
         tb.append(".*");
         sb.append("\\.svg");
-        svgPattern = Pattern.compile(sb.toString(), Pattern.CASE_INSENSITIVE);
+//        svgPattern = Pattern.compile(sb.toString(), Pattern.CASE_INSENSITIVE);
         resPattern = Pattern.compile(tb.toString(), Pattern.CASE_INSENSITIVE);
     }
+    // TODO : matcher le pattern android
+    private static final Pattern classifiersPattern = Pattern.compile("[^-]+((-[^-]+)+)", Pattern.CASE_INSENSITIVE);
+    
     
     /**
      * Directory of the svg resources to generate drawable from.
@@ -161,7 +141,10 @@ public class Gen extends AbstractMojo {
     private String highResIcon;
     
     public void execute() throws MojoExecutionException {
-        // validating
+        
+        // validating target densities specified in pom.xml
+        // untargetted densities will be ignored 
+        // except for the fallback density if specified
         final Set<Density> targetDensities_ = EnumSet.noneOf(Density.class);
         for (String density : targetedDensities) {
             try {
@@ -177,9 +160,15 @@ public class Gen extends AbstractMojo {
             throw new MojoExecutionException("Invalid fallback density : " + fallbackDensity, e);
         }
         final Density fallbackDensity_ = fd_;
+        targetDensities_.add(fallbackDensity_);
         
-        // list destinations
-        final List<Input> destinations = new ArrayList<Input>();
+        /*********************************************
+         * List existing output drawable directories *
+         *********************************************/
+        final Map<Density, List<Input>> destinations = new EnumMap<Density, List<Input>>(Density.class);
+        for (Density d : targetDensities_) {
+            destinations.put(d, new ArrayList<Input>());
+        }
         final Set<Density> foundDensities = EnumSet.noneOf(Density.class);
         if (to.isDirectory()) {
             for (File f : to.listFiles(new FileFilter() {
@@ -187,73 +176,79 @@ public class Gen extends AbstractMojo {
                     String name = FilenameUtils.getName(file.getPath());
                     if (file.isDirectory() && name.startsWith("drawable")) {
                         if (skipNoDpi && name.toLowerCase().matches("drawable.*-nodpi(-.+){0,1}")) {
+                            // skip noDpiDirectory
                             return false;
                         }
-                        Matcher m = resPattern.matcher(name.toLowerCase());
-                        if (m.matches()) {
-                            try {
-                                Density density = Density.valueOf(m.group(1).toUpperCase());
-                                if (targetDensities_.isEmpty() 
-                                        || targetDensities_.contains(density)) {
-                                    destinations.add(new Input(file, density));
-                                    foundDensities.add(density);
-                                }
-                                return true;
-                            } catch (IOException e) {
-                                getLog().error(e);
+                        Matcher m1 = classifiersPattern.matcher(name.toLowerCase());
+                        if (m1.matches()) {
+                            // extract classifiers list
+                            final Set<String> classifiers = new HashSet<String>();
+                            for (String classifier : m1.group(1).substring(1).toLowerCase().split("-", -1)) {
+                                classifiers.add(classifier);
                             }
-                        } else {
-                            // drawable resources directory with no density qualifier
-                            try {
-                                destinations.add(new Input(file, fallbackDensity_));
-                                foundDensities.add(fallbackDensity_);
-                            } catch (IOException e) {
-                                getLog().error(e);
+                            classifiers.removeAll(densityClassifiers);
+                            // catalog output
+                            Matcher m2 = resPattern.matcher(name.toLowerCase());
+                            if (m2.matches()) {
+                                // density classified directory
+                                try {
+                                    Density density = Density.valueOf(m2.group(1).toUpperCase());
+                                    if (targetDensities_.isEmpty() 
+                                            || targetDensities_.contains(density)) {
+                                        destinations.get(density).add(new Input(file, density, classifiers));
+                                        foundDensities.add(density);
+                                    }
+                                    return true;
+                                } catch (IOException e) {
+                                    getLog().error(e);
+                                }
+                            } else {
+                                // drawable resources directory with no density qualifier
+                                try {
+                                    destinations.get(fallbackDensity_).add(new Input(file, fallbackDensity_, classifiers));
+                                    foundDensities.add(fallbackDensity_);
+                                } catch (IOException e) {
+                                    getLog().error(e);
+                                }
                             }
                         }
                     }
                     return false;
                 }
             })) {
-                // log matching output directories
                 getLog().debug("found output destination : " + f.getAbsolutePath());
             }
         } else {
             throw new MojoExecutionException(to.getAbsolutePath() + " is not a valid output directory");
         }
-        if (createMissingDirectories && !targetDensities_.isEmpty()) {
-            for (Density density : targetDensities_) {
-                if (!foundDensities.contains(density)) {
-                    File f = new File(
-                            to.getAbsolutePath() + 
-                            System.getProperty("file.separator") + 
-                            "drawable" + (fallbackDensity_.equals(density) ? "" : "-" + density.name().toLowerCase()));
-                    if (!f.exists()) {
-                        f.mkdir();
-                    }
-                    try {
-                        destinations.add(new Input(f, density));
-                    } catch (IOException e) {
-                        throw new MojoExecutionException("Error accessing file " + f.getAbsolutePath(), e);
-                    }
-                }
-            }
-        }
         
-        // list input svg to convert
+        /*****************************
+         * List input svg to convert *
+         *****************************/
         final List<Input> svgToConvert = new ArrayList<Input>();
         if (from.isDirectory()) {
             for (File f : from.listFiles(new FileFilter() {
                 public boolean accept(File file) {
                     if (file.isFile()) {
                         String name = FilenameUtils.getName(file.getPath());
-                        Matcher m = svgPattern.matcher(name.toLowerCase());
-                        if (m.matches()) {
-                            try {
-                                svgToConvert.add(new Input(file, Density.valueOf(m.group(1).toUpperCase())));
-                                return true;
-                            } catch (IOException e) {
-                                getLog().error(e);
+                        Matcher m1 = classifiersPattern.matcher(name.toLowerCase().replace(".svg", ""));
+                        if (m1.matches()) {
+                            // extract classifiers list
+                            final Set<String> classifiers = new HashSet<String>();
+                            for (String classifier : m1.group(1).substring(1).toLowerCase().split("-", -1)) {
+                                classifiers.add(classifier);
+                            }
+                            Set<String> classifiers_ = new HashSet<String>(classifiers);
+                            if (classifiers.removeAll(densityClassifiers)) {
+                                classifiers_.retainAll(densityClassifiers);
+                                if (classifiers_.size() == 1) {
+                                    try {
+                                        svgToConvert.add(new Input(file, Density.valueOf(new ArrayList<String>(classifiers_).get(0).toUpperCase()), classifiers));
+                                        return true;
+                                    } catch (IOException e) {
+                                        getLog().error(e);
+                                    }
+                                }
                             }
                         }
                     }
@@ -271,7 +266,9 @@ public class Gen extends AbstractMojo {
         Input _highResIcon = null;
         Rectangle2D _highResIconBounds = null;
         
-        // create svg in res/* folder(s)
+        /*********************************
+         * Create svg in res/* folder(s) *
+         *********************************/
         for (Input svg : svgToConvert) {
             try {
                 Rectangle2D bounds = extractSVGBounds(svg);
@@ -279,9 +276,27 @@ public class Gen extends AbstractMojo {
                     _highResIcon = svg;
                     _highResIconBounds = bounds;
                 }
-                for (Input destination : destinations) {
-                    getLog().info("Transcoding " + svg.getName() + " to " + destination.getName());
-                    transcode(svg, bounds, destination);
+                // for each target density :
+                // - find matching destinations :
+                //   - matches all extra classifiers
+                //   - no other output with a classifiers set that is a subset of this output
+                // - if no match, create required directories
+                for (Density d : targetDensities_) {
+                    final Collection<Input> filteredDestinations = filterDestinations(destinations.get(d), svg.classifiers, createMissingDirectories);
+                    if (filteredDestinations.isEmpty()) {
+                        // no matching directory - creating one
+                        final String dirName = getInputClassifierDir(d, fallbackDensity_, svg.classifiers);
+                        getLog().info("Creating required directory " + dirName);
+                        File dir = new File(to, dirName);
+                        dir.mkdir();
+                        Input in = new Input(dir, d, svg.classifiers);
+                        filteredDestinations.add(in);
+                        destinations.get(d).add(in);
+                    }
+                    for (Input destination : filteredDestinations) {
+                        getLog().info("Transcoding " + svg.getName() + " to " + destination.getName());
+                        transcode(svg, bounds, destination);
+                    }
                 }
             } catch (MalformedURLException e) {
                 getLog().error(e);
@@ -292,7 +307,9 @@ public class Gen extends AbstractMojo {
             }
         }
         
-        // generates the play store high res icon
+        /******************************************
+         * Generates the play store high res icon *
+         ******************************************/
         if (_highResIcon != null) {
             try {
                 _highResIcon.targetName = "highResIcon";
@@ -306,6 +323,67 @@ public class Gen extends AbstractMojo {
         }
     }
     
+    /**
+     * Return the shortest drawable directory name matching the input classifiers
+     * @param d
+     * @param classifiers
+     * @return
+     */
+    private String getInputClassifierDir(Density d, Density fallback, Collection<String> classifiers) {
+        final StringBuilder sb = new StringBuilder("drawable");
+        if (!d.equals(fallback)) {
+            sb.append("-");
+            sb.append(d.name().toLowerCase());
+        }
+        for (String classifier : classifiers) {
+            sb.append("-");
+            sb.append(classifier);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Filters directory with the svg constraints
+     * @param list
+     *          existing directories
+     * @param classifiers
+     *          classifiers targeted by the svg resource
+     * @param createMissingDirectories
+     *          create a directory if no matching directory found
+     * @return
+     */
+    private Collection<Input> filterDestinations(final List<Input> directories, final Set<String> classifiers, final boolean createMissingDirectories) {
+        Collection<Input> filteredDirectories = new ArrayList<Input>();
+        for (Input in : directories) {
+            // input match requirements
+            if (in.classifiers.containsAll(classifiers)) {
+                // verify that no other matching input
+                // already covers current input requirements
+                boolean retain = true;
+                for (Input filtered : filteredDirectories) {
+                    if (filtered.classifiers.containsAll(in.classifiers)) {
+                        // filtered contains current
+                        // retain current and skip filtered
+                        filteredDirectories.remove(filtered);
+                        break;
+                    } else if (in.classifiers.containsAll(filtered.classifiers)) {
+                        // current contains filtered
+                        // skip current and retain filtered
+                        retain = false;
+                        break;
+                    } else {
+                        // disjunction
+                        // retain both
+                    }
+                }
+                if (retain) {
+                    filteredDirectories.add(in);
+                }
+            }
+        }
+        return filteredDirectories;
+    }
+
     /**
      * Extract the viewbox of the input SVG
      * @param svg
