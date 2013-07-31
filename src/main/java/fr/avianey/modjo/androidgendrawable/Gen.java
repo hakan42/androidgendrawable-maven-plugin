@@ -46,10 +46,8 @@ public class Gen extends AbstractMojo {
         
     private static final Set<String> densityClassifiers = new HashSet<String>();
     // TODO : matcher les pattern Android
-//    private static Pattern svgPattern = null;
     private static Pattern resPattern = null;
     static {
-        StringBuilder sb = new StringBuilder("\\w+-");
         StringBuilder tb = new StringBuilder("drawable.*-");
         StringBuilder db = new StringBuilder("(");
         boolean first = true;
@@ -64,10 +62,7 @@ public class Gen extends AbstractMojo {
         }
         db.append(")");
         tb.append(db.toString());
-        sb.append(db.toString());
         tb.append(".*");
-        sb.append("\\.svg");
-//        svgPattern = Pattern.compile(sb.toString(), Pattern.CASE_INSENSITIVE);
         resPattern = Pattern.compile(tb.toString(), Pattern.CASE_INSENSITIVE);
     }
     // TODO : matcher le pattern android
