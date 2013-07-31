@@ -34,7 +34,7 @@ The repository :
       ...  
       <repository>  
         <id>Android Gen Drawable Maven plugin</id>  
-        <url>http://avianey.github.com/androidgendrawable-maven-plugin/</url>  
+        <url>http://avianey.github.io/androidgendrawable-maven-plugin/</url>  
       </repository>  
     </repositories>
 
@@ -61,6 +61,7 @@ The dependency :
           </targetedDensities>
           <fallbackDensity>mdpi</fallbackDensity>
           <skipNoDpi>true</skipNoDpi>
+          <highResIcon>level</highResIcon>
         </configuration>
         <executions>
           <execution>
@@ -116,3 +117,8 @@ The density for unqualified drawable directories.
 #### skipNoDpi
 
 "true" if you don't want to generate drawables for "nodpi" qualified drawable directories.
+
+#### highResIcon
+
+The name of the SVG resource to use to generate an high res icon for the Play Store.  
+The SVG should have height = width.
