@@ -84,6 +84,7 @@ public class Gen extends AbstractMojo {
      * - drawable-ldpi
      * - drawable-mdpi
      * - drawable-xhdpi
+     * - drawable-xxhdpi
      * 
      * @parameter default-value="${project.basedir}/res"
      */
@@ -110,7 +111,7 @@ public class Gen extends AbstractMojo {
      * 
      * @parameter 
      */
-    private Set<String> targetedDensities;
+    private Set<Density> targetedDensities;
 
     /**
      * Use alternatives names for PNG resources
@@ -126,7 +127,7 @@ public class Gen extends AbstractMojo {
      * 
      * @parameter default-value="mdpi"
      */
-    private String fallbackDensity;
+    private Density fallbackDensity;
     
     /**
      * Density for drawable directories without density qualifier
@@ -140,21 +141,8 @@ public class Gen extends AbstractMojo {
         // validating target densities specified in pom.xml
         // untargetted densities will be ignored 
         // except for the fallback density if specified
-        final Set<Density> targetDensities_ = EnumSet.noneOf(Density.class);
-        for (String density : targetedDensities) {
-            try {
-                targetDensities_.add(Density.valueOf(density.toUpperCase()));
-            } catch (Exception e) {
-                throw new MojoExecutionException("Invalid target density : " + density, e);
-            }
-        }
-        Density fd_ = Density.MDPI;
-        try {
-            fd_ = Density.valueOf(fallbackDensity.toUpperCase());
-        } catch (Exception e) {
-            throw new MojoExecutionException("Invalid fallback density : " + fallbackDensity, e);
-        }
-        final Density fallbackDensity_ = fd_;
+        final Set<Density> targetDensities_ = targetedDensities;
+        final Density fallbackDensity_ = fallbackDensity;
         targetDensities_.add(fallbackDensity_);
         
         /*********************************************
@@ -187,7 +175,7 @@ public class Gen extends AbstractMojo {
                             if (m2.matches()) {
                                 // density classified directory
                                 try {
-                                    Density density = Density.valueOf(m2.group(1).toUpperCase());
+                                    Density density = Density.valueOf(m2.group(1).toLowerCase());
                                     if (targetDensities_.isEmpty() 
                                             || targetDensities_.contains(density)) {
                                         destinations.get(density).add(new Input(file, density, classifiers));
@@ -238,7 +226,7 @@ public class Gen extends AbstractMojo {
                                 classifiers_.retainAll(densityClassifiers);
                                 if (classifiers_.size() == 1) {
                                     try {
-                                        svgToConvert.add(new Input(file, Density.valueOf(new ArrayList<String>(classifiers_).get(0).toUpperCase()), classifiers));
+                                        svgToConvert.add(new Input(file, Density.valueOf(new ArrayList<String>(classifiers_).get(0).toLowerCase()), classifiers));
                                         return true;
                                     } catch (IOException e) {
                                         getLog().error(e);
@@ -309,7 +297,7 @@ public class Gen extends AbstractMojo {
             try {
                 _highResIcon.targetName = "highResIcon";
                 // TODO : add a garbage density (NO_DENSITY)
-                transcode(_highResIcon, _highResIconBounds, new Input(new File("."), Density.MDPI), 512, 512);
+                transcode(_highResIcon, _highResIconBounds, new Input(new File("."), Density.mdpi), 512, 512);
             } catch (IOException e) {
                 getLog().error(e);
             } catch (TranscoderException e) {
