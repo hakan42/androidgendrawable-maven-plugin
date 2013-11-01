@@ -3,7 +3,7 @@ package fr.avianey.modjo.androidgendrawable;
 
 public enum Density {
     
-    ldpi(120), mdpi(160), hdpi(240), xhdpi(320), tvdpi(213), xxhdpi(480);
+    ldpi(120), mdpi(160), hdpi(240), xhdpi(320), tvdpi(213), xxhdpi(480), xxxhdpi(640);
     
     private int dpi;
 

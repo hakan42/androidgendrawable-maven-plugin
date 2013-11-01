@@ -10,9 +10,37 @@
 	<artifactId>androidgendrawable-maven-plugin</artifactId>
 	<packaging>maven-plugin</packaging>
 	<version>1.0-SNAPSHOT</version>
-	<name>androidgendrawable-maven-plugin Maven Mojo</name>
+	<name>AndroidGenDrawable Maven Plugin</name>
 	<url>https://github.com/avianey/androidgendrawable-maven-plugin</url>
+    
+    <description>Manage and Generate 'classifier specific' PNG raster drawable from SVG at build time for Android projects.</description>
 
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <url>https://github.com/avianey/androidgendrawable-maven-plugin</url>
+        <developerConnection>scm:git:git@github.com:avianey/androidgendrawable-maven-plugin.git</developerConnection>
+        <connection>scm:git:git://github.com/avianey/androidgendrawable-maven-plugin.git</connection>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>http://github.com/avianey/androidgendrawable-maven-plugin/issues</url>
+    </issueManagement>
+
+    <developers>
+        <developer>
+            <id>avianey</id>
+            <name>Antoine Vianey</name>
+        </developer>
+    </developers>
+  
 	<build>
 		<plugins>
 			<plugin>
