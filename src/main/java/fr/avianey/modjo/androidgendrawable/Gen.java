@@ -7,14 +7,18 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
+import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +44,9 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.w3c.dom.svg.SVGDocument;
+
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 /**
  * Goal which generates drawable from Scalable Vector Graphics (SVG) files.
@@ -138,26 +145,48 @@ public class Gen extends AbstractMojo {
     private Density fallbackDensity;
     
     /**
-     * Density for drawable directories without density qualifier
+     * Name of the input file to use to generate a 512x512 high resolution Google Play icon
      * 
      * @parameter default-value=""
      */
     private String highResIcon;
+    
+    /**
+     * Path to the 9-patch drawable configuration file.
+     * 
+     * @parameter
+     * @parameter default-value=null
+     */
+    private String ninePatchConfig;
     
     public void execute() throws MojoExecutionException {
         
         // validating target densities specified in pom.xml
         // untargetted densities will be ignored 
         // except for the fallback density if specified
-        final Set<Density> targetDensities_ = targetedDensities;
-        final Density fallbackDensity_ = fallbackDensity;
-        targetDensities_.add(fallbackDensity_);
+        final Set<Density> _targetDensities = targetedDensities;
+        final Density _fallbackDensity = fallbackDensity;
+        _targetDensities.add(_fallbackDensity);
+        
+        /********************************
+         * Load NinePatch configuration *
+         ********************************/
+        
+        Map<String, NinePatch> ninePatchMap = new HashMap<>();
+        if (ninePatchConfig != null) {
+            try (final Reader reader = new FileReader(ninePatchConfig)) {
+                Type t = new TypeToken<Map<String, NinePatch>>() {}.getType();
+                ninePatchMap.putAll(new GsonBuilder().create().fromJson(reader, t));
+            } catch (IOException e) {
+                getLog().error(e);
+            }
+        }
         
         /*********************************************
          * List existing output drawable directories *
          *********************************************/
         final Map<Density, List<Input>> destinations = new EnumMap<Density, List<Input>>(Density.class);
-        for (Density d : targetDensities_) {
+        for (Density d : _targetDensities) {
             destinations.put(d, new ArrayList<Input>());
         }
         final Set<Density> foundDensities = EnumSet.noneOf(Density.class);
@@ -184,8 +213,8 @@ public class Gen extends AbstractMojo {
                                 // density classified directory
                                 try {
                                     Density density = Density.valueOf(m2.group(1).toLowerCase());
-                                    if (targetDensities_.isEmpty() 
-                                            || targetDensities_.contains(density)) {
+                                    if (_targetDensities.isEmpty() 
+                                            || _targetDensities.contains(density)) {
                                         destinations.get(density).add(new Input(file, density, classifiers));
                                         foundDensities.add(density);
                                     }
@@ -196,8 +225,8 @@ public class Gen extends AbstractMojo {
                             } else {
                                 // drawable resources directory with no density qualifier
                                 try {
-                                    destinations.get(fallbackDensity_).add(new Input(file, fallbackDensity_, classifiers));
-                                    foundDensities.add(fallbackDensity_);
+                                    destinations.get(_fallbackDensity).add(new Input(file, _fallbackDensity, classifiers));
+                                    foundDensities.add(_fallbackDensity);
                                 } catch (IOException e) {
                                     getLog().error(e);
                                 }
@@ -272,11 +301,11 @@ public class Gen extends AbstractMojo {
                 //   - matches all extra classifiers
                 //   - no other output with a classifiers set that is a subset of this output
                 // - if no match, create required directories
-                for (Density d : targetDensities_) {
+                for (Density d : _targetDensities) {
                     final Collection<Input> filteredDestinations = filterDestinations(destinations.get(d), svg.classifiers, createMissingDirectories);
                     if (filteredDestinations.isEmpty()) {
                         // no matching directory - creating one
-                        final String dirName = getInputClassifierDir(d, fallbackDensity_, svg.classifiers);
+                        final String dirName = getInputClassifierDir(d, _fallbackDensity, svg.classifiers);
                         getLog().info("Creating required directory " + dirName);
                         File dir = new File(to, dirName);
                         dir.mkdir();
