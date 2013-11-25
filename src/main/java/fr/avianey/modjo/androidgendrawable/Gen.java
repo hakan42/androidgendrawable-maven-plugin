@@ -1,10 +1,14 @@
 package fr.avianey.modjo.androidgendrawable;
 
+import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -17,6 +21,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.imageio.ImageIO;
 
 import org.apache.batik.bridge.BridgeContext;
 import org.apache.batik.bridge.DocumentLoader;
@@ -41,6 +47,8 @@ import org.w3c.dom.svg.SVGDocument;
  * @goal gen
  */
 // TODO : delete PNG with the same name as target PNG
+// TODO : JPEG or PNG
+// TODO : 9-Patch
 // TODO : handle multiple output directories with no density classifier
 public class Gen extends AbstractMojo {
         
@@ -431,6 +439,26 @@ public class Gen extends AbstractMojo {
         t.transcode(input, output);
         ostream.flush();
         ostream.close();
+    }
+    
+    private void toNinePatch(InputStream is) {
+        try {
+            BufferedImage image = ImageIO.read(is);
+            
+            BufferedImage newImage = new BufferedImage(
+                    image.getWidth() + 2, 
+                    image.getHeight() + 2, 
+                    BufferedImage.TYPE_INT_ARGB);
+            Graphics g = newImage.getGraphics();
+            g.setColor(Color.white);
+            g.fillRect(0,0,newImage.getWidth(),newImage.getHeight());
+            g.drawImage(image, 1, 1, null);
+//            ImageIO.write(im, formatName, output);
+            
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
 }
