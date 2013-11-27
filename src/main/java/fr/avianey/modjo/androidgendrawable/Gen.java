@@ -4,6 +4,8 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
@@ -47,6 +49,8 @@ import org.w3c.dom.svg.SVGDocument;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+
+import fr.avianey.modjo.androidgendrawable.NinePatch.Zone;
 
 /**
  * Goal which generates drawable from Scalable Vector Graphics (SVG) files.
@@ -159,6 +163,7 @@ public class Gen extends AbstractMojo {
      */
     private String ninePatchConfig;
     
+    @SuppressWarnings("unchecked")
     public void execute() throws MojoExecutionException {
         
         // validating target densities specified in pom.xml
@@ -175,8 +180,8 @@ public class Gen extends AbstractMojo {
         Map<String, NinePatch> ninePatchMap = new HashMap<>();
         if (ninePatchConfig != null) {
             try (final Reader reader = new FileReader(ninePatchConfig)) {
-                Type t = new TypeToken<Map<String, NinePatch>>() {}.getType();
-                ninePatchMap.putAll(new GsonBuilder().create().fromJson(reader, t));
+                Type t = new TypeToken<Map<String, NinePatch>>(){}.getType();
+                ninePatchMap.putAll((Map<String, NinePatch>) (new GsonBuilder().create().fromJson(reader, t)));
             } catch (IOException e) {
                 getLog().error(e);
             }
@@ -315,7 +320,7 @@ public class Gen extends AbstractMojo {
                     }
                     for (Input destination : filteredDestinations) {
                         getLog().info("Transcoding " + svg.getName() + " to " + destination.getName());
-                        transcode(svg, bounds, destination);
+                        transcode(svg, bounds, destination, ninePatchMap.get(svg.targetName));
                     }
                 }
             } catch (MalformedURLException e) {
@@ -333,8 +338,8 @@ public class Gen extends AbstractMojo {
         if (_highResIcon != null) {
             try {
                 _highResIcon.targetName = "highResIcon";
-                // TODO : add a garbage density (NO_DENSITY)
-                transcode(_highResIcon, _highResIconBounds, new Input(new File("."), Density.mdpi), 512, 512);
+                // TODO : add a garbage density (NO_DENSITY) for the highResIcon
+                transcode(_highResIcon, _highResIconBounds, new Input(new File("."), Density.mdpi), 512, 512, null);
             } catch (IOException e) {
                 getLog().error(e);
             } catch (TranscoderException e) {
@@ -432,10 +437,11 @@ public class Gen extends AbstractMojo {
      * @throws IOException
      * @throws TranscoderException
      */
-    private void transcode(Input svg, Rectangle2D bounds, Input dest) throws IOException, TranscoderException {
+    private void transcode(Input svg, Rectangle2D bounds, Input dest, NinePatch ninePatch) throws IOException, TranscoderException {
         transcode(svg, bounds, dest, 
                 new Float(bounds.getWidth() * svg.density.ratio(dest.density)), 
-                new Float(bounds.getHeight() * svg.density.ratio(dest.density)));
+                new Float(bounds.getHeight() * svg.density.ratio(dest.density)),
+                ninePatch);
     }
     
     /**
@@ -450,7 +456,7 @@ public class Gen extends AbstractMojo {
      */
     // TODO : center inside option
     // TODO : preserve aspect ratio
-    private void transcode(Input svg, Rectangle2D bounds, Input dest, float targetWidth, float targetHeight) throws IOException, TranscoderException {
+    private void transcode(Input svg, Rectangle2D bounds, Input dest, float targetWidth, float targetHeight, NinePatch ninePatch) throws IOException, TranscoderException {
         PNGTranscoder t = new PNGTranscoder();
         t.addTranscodingHint(PNGTranscoder.KEY_WIDTH, new Float(targetWidth));
         t.addTranscodingHint(PNGTranscoder.KEY_HEIGHT, new Float(targetHeight));
@@ -463,31 +469,78 @@ public class Gen extends AbstractMojo {
                 getLog().warn(rename.get(outputName) + " is not a valid replacment name for " + outputName);
             }
         }
-        OutputStream ostream = new FileOutputStream(dest.getAbsolutePath() + System.getProperty("file.separator") + outputName + ".png");
-        TranscoderOutput output = new TranscoderOutput(ostream);
-        t.transcode(input, output);
-        ostream.flush();
-        ostream.close();
+        final String finalName = new StringBuilder(dest.getAbsolutePath())
+            .append(System.getProperty("file.separator"))
+            .append(outputName)
+            .append(ninePatch != null ? ".9" : "")
+            .append(".png")
+            .toString();
+        if (ninePatch == null) {
+            // write file directly
+            OutputStream ostream = new FileOutputStream(finalName);
+            TranscoderOutput output = new TranscoderOutput(ostream);
+            t.transcode(input, output);
+            ostream.flush();
+            ostream.close();
+        } else {
+            // write in memory
+            ByteArrayOutputStream ostream = new ByteArrayOutputStream();
+            TranscoderOutput output = new TranscoderOutput(ostream);
+            t.transcode(input, output);
+            // fill the patch
+            ostream.flush();
+            InputStream istream = new ByteArrayInputStream(ostream.toByteArray());
+            ostream.close();
+            ostream = null;
+            toNinePatch(istream, finalName, ninePatch, svg.density.ratio(dest.density));
+        }
     }
     
-    private void toNinePatch(InputStream is) {
-        try {
-            BufferedImage image = ImageIO.read(is);
-            
-            BufferedImage newImage = new BufferedImage(
-                    image.getWidth() + 2, 
-                    image.getHeight() + 2, 
-                    BufferedImage.TYPE_INT_ARGB);
-            Graphics g = newImage.getGraphics();
-            g.setColor(Color.white);
-            g.fillRect(0,0,newImage.getWidth(),newImage.getHeight());
-            g.drawImage(image, 1, 1, null);
-//            ImageIO.write(im, formatName, output);
-            
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+    /**
+     * Draw the stretch and content area defined by the {@link NinePatch} around the given image
+     * @param is
+     * @param finalName
+     * @param ninePatch
+     * @param ratio
+     * @throws IOException
+     */
+    private void toNinePatch(final InputStream is, final String finalName, final NinePatch ninePatch, final double ratio) throws IOException {
+        BufferedImage image = ImageIO.read(is);
+        final int w = image.getWidth();
+        final int h = image.getHeight();
+        BufferedImage ninePatchImage = new BufferedImage(
+                w + 2, 
+                h + 2, 
+                BufferedImage.TYPE_INT_ARGB);
+        Graphics g = ninePatchImage.getGraphics();
+        g.drawImage(image, 1, 1, null);
+        
+        // draw patch
+        g.setColor(Color.BLACK);
+        Zone stretch = ninePatch.getStretch();
+        for (int[] seg : stretch.getX()) {
+            final int start = (int) Math.floor(seg[0] * ratio);
+            final int stop = (int) Math.ceil(seg[1] * ratio);
+            g.fillRect(start, 0, stop, 1);
         }
+        for (int[] seg : stretch.getY()) {
+            final int start = (int) Math.floor(seg[0] * ratio);
+            final int stop = (int) Math.ceil(seg[1] * ratio);
+            g.fillRect(0, start, 1, stop);
+        }
+        Zone content = ninePatch.getContent();
+        for (int[] seg : content.getX()) {
+            final int start = (int) Math.floor(seg[0] * ratio);
+            final int stop = (int) Math.ceil(seg[1] * ratio);
+            g.fillRect(start, h + 1, stop, 1);
+        }
+        for (int[] seg : content.getY()) {
+            final int start = (int) Math.floor(seg[0] * ratio);
+            final int stop = (int) Math.ceil(seg[1] * ratio);
+            g.fillRect(w + 1, start, 1, stop);
+        }
+        
+        ImageIO.write(ninePatchImage, "png", new File(finalName));
     }
 
 }
