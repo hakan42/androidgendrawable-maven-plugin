@@ -1,6 +1,8 @@
 Android Gen Drawable Maven plugin
 =================================
 
+http://developer.android.com/guide/topics/resources/providing-resources.html
+
 A Maven plugin that allow you to generate density dependent drawable resources from a SVG file.  
 
 ## Sample

@@ -6,7 +6,7 @@
     
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>fr.avianey.modjo</groupId>
-	<artifactId>androidgendrawable-maven-plugin</artifactId>
+	<artifactId>androidgendrawable-sample</artifactId>
 	<packaging>apk</packaging>
 	<version>1.0-SNAPSHOT</version>
 	<name>AndroidGenDrawable Maven Plugin Sample Project</name>
@@ -99,19 +99,29 @@
                 <groupId>fr.avianey.modjo</groupId>
                 <artifactId>androidgendrawable-maven-plugin</artifactId>
                 <configuration>
+                    <!-- where to pick the svg -->
                     <from>${project.basedir}/svg</from>
+                    <!-- where to generate them -->
                     <to>${project.basedir}/res</to>
                     <rename></rename>
+                    <!-- TODO : skip already generated resources -->
+                    <!-- <override>false</override> -->
+                    <!-- create or skip missing directories -->
                     <createMissingDirectories>true</createMissingDirectories>
                     <targetedDensities>
-                        <densitys>ldpi</densitys>
+                        <!-- let skip ldpi & tvdpi here -->
                         <densitys>hdpi</densitys>
                         <densitys>xhdpi</densitys>
+                        <densitys>xxhdpi</densitys>
+                        <densitys>xxxhdpi</densitys>
                     </targetedDensities>
+                    <!-- use no qualifier for mdpi drawables -->
+                    <!-- TODO : bug if no existing folder with no density qualifier -->
                     <fallbackDensity>mdpi</fallbackDensity>
 					<!-- generate nothing in -nodpi directories -->
                     <skipNoDpi>true</skipNoDpi>
-                    <highResIcon>babymonitor</highResIcon>
+                    <!-- use the app icon to generate the High Res Icon for Google Play -->
+                    <highResIcon>icon</highResIcon>
                 </configuration>
                 <executions>
                     <execution>

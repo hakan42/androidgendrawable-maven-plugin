@@ -60,10 +60,11 @@ import fr.avianey.modjo.androidgendrawable.NinePatch.Zone;
 // TODO : delete PNG with the same name as target PNG
 // TODO : JPEG or PNG
 // TODO : 9-Patch
-// TODO : handle multiple output directories with no density classifier
+// TODO : handle multiple output directories with no density qualifier
+// TODO : ordered qualifiers (http://developer.android.com/guide/topics/resources/providing-resources.html#QualifierRules)
 public class Gen extends AbstractMojo {
         
-    private static final Set<String> densityClassifiers = new HashSet<String>();
+    private static final Set<String> densityQualifiers = new HashSet<String>();
     // TODO : matcher les pattern Android
     private static Pattern resPattern = null;
     static {
@@ -77,7 +78,7 @@ public class Gen extends AbstractMojo {
                 first = false;
             }
             db.append(density.name());
-            densityClassifiers.add(density.name().toLowerCase());
+            densityQualifiers.add(density.name().toLowerCase());
         }
         db.append(")");
         tb.append(db.toString());
@@ -85,7 +86,7 @@ public class Gen extends AbstractMojo {
         resPattern = Pattern.compile(tb.toString(), Pattern.CASE_INSENSITIVE);
     }
     // TODO : matcher le pattern android
-    private static final Pattern classifiersPattern = Pattern.compile("[^-]+((-[^-]+)+)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern qualifiersPattern = Pattern.compile("[^-]+((-[^-]+)+)", Pattern.CASE_INSENSITIVE);
     
     
     /**
@@ -110,9 +111,14 @@ public class Gen extends AbstractMojo {
     private File to;
     
     /**
-     * Create a drawable-density directory when no directory exists for a targeted densities
+     * Create a drawable-density directory when no directory exists for the given qualifiers.
+     * If set to false, the plugin will generate the drawable in the best matching directory :
+     * <ul>
+     * <li>match all of the qualifiers</li>
+     * <li>no other matching directory with less qualifiers</li>
+     * </ul>
      * 
-     * @parameter default-value="false"
+     * @parameter default-value="true"
      */
     private boolean createMissingDirectories;
     
@@ -172,6 +178,7 @@ public class Gen extends AbstractMojo {
         final Set<Density> _targetDensities = targetedDensities;
         final Density _fallbackDensity = fallbackDensity;
         _targetDensities.add(_fallbackDensity);
+        getLog().debug("Fallback density set to : " + fallbackDensity.toString());
         
         /********************************
          * Load NinePatch configuration *
@@ -204,14 +211,14 @@ public class Gen extends AbstractMojo {
                             // skip noDpiDirectory
                             return false;
                         }
-                        Matcher m1 = classifiersPattern.matcher(name.toLowerCase());
+                        Matcher m1 = qualifiersPattern.matcher(name.toLowerCase());
                         if (m1.matches()) {
-                            // extract classifiers list
-                            final Set<String> classifiers = new HashSet<String>();
-                            for (String classifier : m1.group(1).substring(1).toLowerCase().split("-", -1)) {
-                                classifiers.add(classifier);
+                            // extract qualifiers list
+                            final Set<String> qualifiers = new HashSet<String>();
+                            for (String qualifier : m1.group(1).substring(1).toLowerCase().split("-", -1)) {
+                                qualifiers.add(qualifier);
                             }
-                            classifiers.removeAll(densityClassifiers);
+                            qualifiers.removeAll(densityQualifiers);
                             // catalog output
                             Matcher m2 = resPattern.matcher(name.toLowerCase());
                             if (m2.matches()) {
@@ -220,7 +227,7 @@ public class Gen extends AbstractMojo {
                                     Density density = Density.valueOf(m2.group(1).toLowerCase());
                                     if (_targetDensities.isEmpty() 
                                             || _targetDensities.contains(density)) {
-                                        destinations.get(density).add(new Input(file, density, classifiers));
+                                        destinations.get(density).add(new Input(file, density, qualifiers));
                                         foundDensities.add(density);
                                     }
                                     return true;
@@ -230,7 +237,7 @@ public class Gen extends AbstractMojo {
                             } else {
                                 // drawable resources directory with no density qualifier
                                 try {
-                                    destinations.get(_fallbackDensity).add(new Input(file, _fallbackDensity, classifiers));
+                                    destinations.get(_fallbackDensity).add(new Input(file, _fallbackDensity, qualifiers));
                                     foundDensities.add(_fallbackDensity);
                                 } catch (IOException e) {
                                     getLog().error(e);
@@ -241,7 +248,7 @@ public class Gen extends AbstractMojo {
                     return false;
                 }
             })) {
-                getLog().debug("found output destination : " + f.getAbsolutePath());
+                getLog().debug("Found output destination : " + f.getAbsolutePath());
             }
         } else {
             throw new MojoExecutionException(to.getAbsolutePath() + " is not a valid output directory");
@@ -256,19 +263,19 @@ public class Gen extends AbstractMojo {
                 public boolean accept(File file) {
                     if (file.isFile()) {
                         String name = FilenameUtils.getName(file.getPath());
-                        Matcher m1 = classifiersPattern.matcher(name.toLowerCase().replace(".svg", ""));
+                        Matcher m1 = qualifiersPattern.matcher(name.toLowerCase().replace(".svg", ""));
                         if (m1.matches()) {
-                            // extract classifiers list
-                            final Set<String> classifiers = new HashSet<String>();
-                            for (String classifier : m1.group(1).substring(1).toLowerCase().split("-", -1)) {
-                                classifiers.add(classifier);
+                            // extract qualifiers list
+                            final Set<String> qualifiers = new HashSet<String>();
+                            for (String qualifier : m1.group(1).substring(1).toLowerCase().split("-", -1)) {
+                                qualifiers.add(qualifier);
                             }
-                            Set<String> classifiers_ = new HashSet<String>(classifiers);
-                            if (classifiers.removeAll(densityClassifiers)) {
-                                classifiers_.retainAll(densityClassifiers);
-                                if (classifiers_.size() == 1) {
+                            Set<String> _qualifiers = new HashSet<String>(qualifiers);
+                            if (qualifiers.removeAll(densityQualifiers)) {
+                                _qualifiers.retainAll(densityQualifiers);
+                                if (_qualifiers.size() == 1) {
                                     try {
-                                        svgToConvert.add(new Input(file, Density.valueOf(new ArrayList<String>(classifiers_).get(0).toLowerCase()), classifiers));
+                                        svgToConvert.add(new Input(file, Density.valueOf(new ArrayList<String>(_qualifiers).get(0).toLowerCase()), qualifiers));
                                         return true;
                                     } catch (IOException e) {
                                         getLog().error(e);
@@ -282,7 +289,7 @@ public class Gen extends AbstractMojo {
                 }
             })) {
                 // log matching svg inputs
-                getLog().debug("found svg file to convert : " + f.getAbsolutePath());
+                getLog().debug("Found svg file to convert : " + f.getAbsolutePath());
             }
         } else {
             throw new MojoExecutionException(from.getAbsolutePath() + " is not a valid input directory");
@@ -301,22 +308,26 @@ public class Gen extends AbstractMojo {
                     _highResIcon = svg;
                     _highResIconBounds = bounds;
                 }
+                getLog().debug("Generating drawable from " + svg.getName());
                 // for each target density :
                 // - find matching destinations :
-                //   - matches all extra classifiers
-                //   - no other output with a classifiers set that is a subset of this output
+                //   - matches all extra qualifiers
+                //   - no other output with a qualifiers set that is a subset of this output
                 // - if no match, create required directories
                 for (Density d : _targetDensities) {
-                    final Collection<Input> filteredDestinations = filterDestinations(destinations.get(d), svg.classifiers, createMissingDirectories);
-                    if (filteredDestinations.isEmpty()) {
+                    getLog().debug("Generating drawable for target density " + d.toString());
+                    final Collection<Input> filteredDestinations = filterDestinations(destinations.get(d), svg.qualifiers, createMissingDirectories);
+                    if (filteredDestinations.isEmpty() && createMissingDirectories) {
                         // no matching directory - creating one
-                        final String dirName = getInputClassifierDir(d, _fallbackDensity, svg.classifiers);
-                        getLog().info("Creating required directory " + dirName);
+                        final String dirName = getInputClassifierDir(d, _fallbackDensity, svg.qualifiers);
+                        getLog().debug("No matching directory found for qualifiers " + svg.qualifiers.toString() + " ... creating " + dirName);
                         File dir = new File(to, dirName);
                         dir.mkdir();
-                        Input in = new Input(dir, d, svg.classifiers);
+                        Input in = new Input(dir, d, svg.qualifiers);
                         filteredDestinations.add(in);
                         destinations.get(d).add(in);
+                    } else if (filteredDestinations.isEmpty()) {
+                        getLog().debug("No matching directory found for qualifiers " + svg.qualifiers.toString() + " ... set createMissingDirectores to true to generate it automatically");
                     }
                     for (Input destination : filteredDestinations) {
                         getLog().info("Transcoding " + svg.getName() + " to " + destination.getName());
@@ -349,20 +360,20 @@ public class Gen extends AbstractMojo {
     }
     
     /**
-     * Return the shortest drawable directory name matching the input classifiers
+     * Return the shortest drawable directory name matching the input qualifiers
      * @param d
-     * @param classifiers
+     * @param qualifiers
      * @return
      */
-    private String getInputClassifierDir(Density d, Density fallback, Collection<String> classifiers) {
+    private String getInputClassifierDir(Density d, Density fallback, Collection<String> qualifiers) {
         final StringBuilder sb = new StringBuilder("drawable");
         if (!d.equals(fallback)) {
             sb.append("-");
             sb.append(d.name().toLowerCase());
         }
-        for (String classifier : classifiers) {
+        for (String qualifier : qualifiers) {
             sb.append("-");
-            sb.append(classifier);
+            sb.append(qualifier);
         }
         return sb.toString();
     }
@@ -371,34 +382,41 @@ public class Gen extends AbstractMojo {
      * Filters directory with the svg constraints
      * @param list
      *          existing directories
-     * @param classifiers
-     *          classifiers targeted by the svg resource
+     * @param qualifiers
+     *          qualifiers targeted by the svg resource
      * @param createMissingDirectories
      *          create a directory if no matching directory found
      * @return
      */
-    private Collection<Input> filterDestinations(final List<Input> directories, final Set<String> classifiers, final boolean createMissingDirectories) {
+    private Collection<Input> filterDestinations(final List<Input> directories, final Set<String> qualifiers, final boolean createMissingDirectories) {
         Collection<Input> filteredDirectories = new ArrayList<Input>();
         for (Input in : directories) {
             // input match requirements
-            if (in.classifiers.containsAll(classifiers)) {
-                // verify that no other matching input
-                // already covers current input requirements
+            if (in.qualifiers.containsAll(qualifiers)) {
+                if (createMissingDirectories && !qualifiers.containsAll(in.qualifiers)) {
+                    // skip input as it doesn't match exactly the requested qualifiers
+                    continue;
+                }
+                // otherwise, we keep the best matching existing input
+                // verify that no other matching input already covers current input qualifiers
                 boolean retain = true;
                 for (Input filtered : filteredDirectories) {
-                    if (filtered.classifiers.containsAll(in.classifiers)) {
+                    if (filtered.qualifiers.containsAll(in.qualifiers)) {
                         // filtered contains current
                         // retain current and skip filtered
                         filteredDirectories.remove(filtered);
                         break;
-                    } else if (in.classifiers.containsAll(filtered.classifiers)) {
+                    } else if (in.qualifiers.containsAll(filtered.qualifiers)) {
                         // current contains filtered
                         // skip current and retain filtered
                         retain = false;
                         break;
                     } else {
-                        // disjunction
-                        // retain both
+                        // disjunction, retain both
+                        // ex : sample-mdpi-fr.svg
+                        // >> "drawable-fr-mdpi-land/"
+                        // >> "drawable-fr-mdpi-port/"
+                        // and no "drawable-fr-mdpi/"
                     }
                 }
                 if (retain) {

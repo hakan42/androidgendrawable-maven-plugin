@@ -12,7 +12,7 @@ public class Input extends File {
     
     public Density density;
     public String targetName;
-    public Set<String> classifiers;
+    public Set<String> qualifiers;
 
     public Input(File file, Density density) throws IOException {
         super(file.getCanonicalPath());
@@ -23,7 +23,7 @@ public class Input extends File {
 
     public Input(File file, Density density, Set<String> classifiers) throws IOException {
         this(file, density);
-        this.classifiers = classifiers;
+        this.qualifiers = classifiers;
         if (classifiers != null) {
             for (String classifier : classifiers) {
                 this.targetName = this.targetName.replaceAll("-" + classifier, "");
