@@ -1,0 +1,42 @@
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <style name="BabyMonitor" parent="@style/Theme.Sherlock">
+        
+        <item name="actionBarStyle">@style/Widget.BabyMonitor.ActionBar</item>
+        <item name="android:actionBarStyle">@style/Widget.BabyMonitor.ActionBar</item>
+        <item name="actionBarItemBackground">@drawable/action_bar_item</item>
+        <item name="android:actionBarItemBackground">@drawable/action_bar_item</item>
+        <item name="actionDropDownStyle">@style/DropDownStyle</item>
+        <item name="android:actionDropDownStyle">@style/DropDownStyle</item>
+        
+        <item name="textAppearanceButton">@style/TextAppearance.Button</item>
+        <item name="textAppearancePreferenceTitle">@style/TextAppearance.Preference.Title</item>
+        <item name="textAppearancePreferenceSummary">@style/TextAppearance.Preference.Summary</item>
+        <item name="textAppearancePreferenceCategory">@style/TextAppearance.Preference.Category</item>
+        
+        <item name="android:progressBarStyle">@style/ProgressBar</item>
+        <item name="android:seekBarStyle">@style/SeekBar</item>
+        <item name="android:windowBackground">@drawable/background</item>
+        <item name="android:buttonStyle">@style/Button</item>
+        <item name="android:buttonStyleToggle">@style/Button.Toggle</item>
+        
+        <item name="android:listViewStyle">@style/ListView</item>
+        
+        <item name="android:preferenceStyle">@style/Preference</item>
+        <item name="android:preferenceCategoryStyle">@style/Preference.Category</item>
+        <item name="android:checkBoxPreferenceStyle">@style/Preference.CheckBoxPreference</item>
+        <item name="android:dialogPreferenceStyle">@style/Preference.DialogPreference</item>
+        
+    </style>
+    
+    <style name="BabyMonitor.Dialog">
+        <item name="android:windowBackground">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowFrame">@null</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Dialog</item>
+        <item name="android:windowSoftInputMode">stateUnspecified|adjustPan</item>
+    </style>
+
+</resources>

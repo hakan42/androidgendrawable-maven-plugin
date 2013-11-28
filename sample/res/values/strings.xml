@@ -1,0 +1,95 @@
+<resources>
+
+    <string name="babymonitor">BabyPhone</string>
+    <string name="settings">Préférences</string>
+    
+    <string name="menu_settings">Préférences</string>
+    
+    <!-- boutons -->
+    <string name="btn_on">cliquer pour arrêter</string>
+    <string name="btn_off">cliquer pour démarrer</string>
+    <string name="btn_close">Fermer</string>
+    <string name="btn_yes_continue">Oui, continuer</string>
+    <string name="btn_no_cancel">Non, annuler</string>
+    <string name="btn_save">Enregistrer</string>
+    <string name="btn_cancel">Annuler</string>
+    <string name="btn_pick_contact">Choisir un contact</string>
+    <string name="btn_accept">Accepter</string>
+    <string name="btn_deny">Refuser</string>
+    <string name="btn_call">appel</string>
+    <string name="btn_sms">sms</string>
+    
+    <!-- prefs -->
+    <string name="pref_base">Configuration de l\'écoute bébé</string>
+    <string name="pref_others">Autre</string>
+    <string name="pref_cgu">CGU</string>
+    <string name="pref_cgu_summary">Condition d\'utilisation de BabyPhone.</string>
+    <string name="pref_baby_name">Identification</string>
+    <string name="pref_baby_name_summary">Le nom \"%s\" sera utilisé pour identifier bébé dans les alertes SMS.</string>
+    <string name="pref_monitor_sensibility">Sensibilité</string>
+    <string name="pref_alert_interval">Fréquence des alertes</string>
+    <string name="pref_alert_number">Numéro de téléphone</string>
+    <string name="pref_alert_number_unset_summary">Numéro auquel les alertes seront envoyées.</string>
+    <string name="pref_alert_number_set_summary">Les alertes seront envoyées à ce numéro.</string>
+    
+    <string name="pref_reset">Effacer les préférences</string>
+    <string name="pref_reset_summary">Et rétablir la configuration par défaut.</string>
+    
+    <!-- indicators -->
+    <string name="indicator_battery_low">Batterie faible</string>
+    <string name="indicator_no_alert_type">Aucune alerte sélectionnée</string>
+    <string name="indicator_connectivity_low">Connectivité réseau faible</string>
+    <string name="indicator_interval_between_alarms">Entre chaque alarme</string>
+    <string name="indicator_charger_disconnected">Chargeur non branché</string>
+    <string name="indicator_no_contact_number">Aucun numéro de contact</string>
+    
+    <!-- popup -->
+    <string name="dialog_alert_number_title">Numéro de téléphone</string>
+    <string name="dialog_account_title">Votre compte</string>
+    <string name="dialog_reset_title">Effacer les préférences</string>
+    <string name="dialog_reset_body">Votre configuration actuelle sera effacée et remplacée par la configuration par défaut. Souhaitez-vous continuer?</string>
+    
+    <!-- states -->
+    <string name="state_off">L\'écoute bébé est arreté</string>
+    <string name="state_below">Pas de bruit particulier</string>
+    <string name="state_over">Seuil d\'alerte atteint</string>
+    <string name="state_alert">Alerte déclenchée</string>
+    
+    <!-- intervals -->
+    <string name="alert_intervals_no_limits">Pas de limite</string>
+    <string name="alert_intervals_30s">30 secondes</string>
+    <string name="alert_intervals_1m">1 minute</string>
+    <string name="alert_intervals_2m">2 minutes</string>
+    <string name="alert_intervals_never">1 seule fois</string>
+    <string name="alert_intervals_no_limits_summary">Alertes envoyées sans limite de fréquence.</string>
+    <string name="alert_intervals_30s_summary">1 alertes envoyées toutes les 30 secondes maximum.</string>
+    <string name="alert_intervals_1m_summary">1 alertes envoyées toutes les minutes maximum.</string>
+    <string name="alert_intervals_2m_summary">1 alertes envoyées toutes les 2 minutes maximum.</string>
+    <string name="alert_intervals_never_summary">BabyPhone doit être redémarré après chaque alerte.</string>
+    
+    <!-- sensibilities -->
+    <string name="monitor_sensibility_high">Elevée</string>
+    <string name="monitor_sensibility_normal">Normale</string>
+    <string name="monitor_sensibility_low">Faible</string>
+    
+    <!-- autre -->
+    <string name="baby">Baby</string>
+    <string name="monitor">Monitor</string>
+    <string name="progress">Niveau de bruit</string>
+    <string name="threshold">Seuil d\'alerte</string>
+    <string name="email">Adresse mail</string>
+    <string name="password">Mot de passe</string>
+    <string name="alert_number">Entrer un numéro</string>
+    <string name="no_number">Pas de numéro de téléphone&#8230;</string>
+    
+    <!-- notification -->
+    <string name="notification_running_title">BabyPhone</string>
+    <string name="notification_running_content">BabyPhone est en marche&#8230;</string>
+    
+    <!-- SMS content -->
+    <string name="sms_content">%s\n\nNiveau sonor élevé détecté.\nBébé doit pleurer&#8230;</string>
+    
+    <!-- CGU -->
+    <string name="cgu">Conditions d\'utilisation</string>
+
+</resources>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+	<!-- Intervalle entre deux alertes -->
+	<string-array name="alert_intervals_names">
+        <item>@string/alert_intervals_no_limits</item>
+        <item>@string/alert_intervals_30s</item>
+        <item>@string/alert_intervals_1m</item>
+        <item>@string/alert_intervals_2m</item>
+        <item>@string/alert_intervals_never</item>
+    </string-array>
+    
+    <string-array name="alert_intervals">
+	    <item>NO_LIMIT</item>
+	    <item>EVERY_30_SECONDS</item>
+	    <item>EVERY_MINUTE</item>
+	    <item>EVERY_2_MINUTES</item>
+	    <item>NEVER</item>
+	</string-array>
+
+	<!-- Sensibilités -->
+	<string-array name="monitor_sensibilities_names">
+        <item>@string/monitor_sensibility_high</item>
+        <item>@string/monitor_sensibility_normal</item>
+        <item>@string/monitor_sensibility_low</item>
+    </string-array>
+    
+    <string-array name="monitor_sensibilities">
+	    <item>HIGH</item>
+	    <item>NORMAL</item>
+	    <item>LOW</item>
+	</string-array>
+
+</resources>

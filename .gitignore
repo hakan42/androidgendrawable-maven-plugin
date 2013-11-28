@@ -17,4 +17,8 @@ proguard/
 gen/
 libs/
 
+# specific #
+*.png
+*.jpg
+
 

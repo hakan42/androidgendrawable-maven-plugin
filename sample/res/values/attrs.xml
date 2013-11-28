@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="Theme">
+        <attr name="textAppearanceButton" format="reference" />
+        <attr name="textAppearanceBaby" format="reference" />
+        <attr name="textAppearanceNumber" format="reference" />
+        <attr name="textAppearancePreferenceTitle" format="reference" />
+        <attr name="textAppearancePreferenceSummary" format="reference" />
+        <attr name="textAppearancePreferenceCategory" format="reference" />
+    </declare-styleable>
+    
+    <declare-styleable name="SVG">
+        <attr name="svgDrawableTop" format="integer" />
+        <attr name="svgDrawableLeft" format="integer" />
+        <attr name="svgDrawableBottom" format="integer" />
+        <attr name="svgDrawableHeight" format="dimension" />
+        <attr name="svgDrawableWidth" format="dimension" />
+        <!-- ex : 100+:33 will stretch 100 -->
+        <attr name="svgDrawableAspectRatio" format="string" />
+    </declare-styleable>
+    
+    <declare-styleable name="Advanced">
+        <attr name="squareMaxEdge" format="boolean" />
+        <attr name="squareMinEdge" format="boolean" />
+        <attr name="aspectRatio" format="string" />
+    </declare-styleable>
+
+</resources>

@@ -1,0 +1,106 @@
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--  Custom Action Bar -->
+    
+    <style name="Widget.BabyMonitor.ActionBar" parent="Widget.Sherlock.ActionBar">
+        <item name="android:background">@drawable/action_bar_background</item>
+        <item name="background">@drawable/action_bar_background</item>
+    </style>
+    
+    <style name="DropDownStyle" parent="Widget.Sherlock.Light.Spinner.DropDown.ActionBar">
+        <item name="android:popupBackground">@color/green</item> 
+    </style>
+    
+    <!-- Custom Buttons -->
+    
+    <style name="Button" parent="android:Widget.Button">
+        <item name="android:background">@drawable/btn</item>
+        <item name="android:focusable">true</item>
+        <item name="android:clickable">true</item>
+        <item name="android:textAppearance">?textAppearanceButton</item>
+        <item name="android:textColor">@color/btn_selector</item>
+        <item name="android:gravity">center</item>
+    </style>
+    
+    <style name="Button.Toggle">
+    </style>
+    
+    <!-- Custom SeekBar -->
+    
+    <style name="SeekBar" parent="android:Widget.SeekBar">
+        <item name="android:indeterminateOnly">false</item>
+        <item name="android:minHeight">10dip</item>
+        <item name="android:maxHeight">10dip</item>
+        <item name="android:thumb">@drawable/thumb</item>
+        <item name="android:thumbOffset">8dip</item>
+        <item name="android:focusable">true</item>
+    </style>
+    
+    <!-- Custom ProgressBar -->
+    
+    <style name="ProgressBar" parent="android:Widget.ProgressBar.Horizontal">
+        <item name="android:indeterminateOnly">false</item>
+        <item name="android:minHeight">10dip</item>
+        <item name="android:maxHeight">10dip</item>
+    </style>
+    
+    <!-- ListView -->
+    
+    <style name="ListView" parent="android:Widget.AbsListView">
+        <item name="android:fadingEdge">vertical</item>
+        <item name="android:listSelector">@drawable/list_item_selector</item>
+        <item name="android:scrollingCache">true</item>
+        <item name="android:cacheColorHint">@android:color/black</item>
+        <item name="android:dividerHeight">1dip</item>
+        <item name="android:divider">@drawable/separator</item>
+    </style>
+    
+    <!-- Preferences -->
+    
+    <style name="Preference">
+        <item name="android:layout">@layout/preference</item>
+    </style>
+    
+    <style name="Preference.Category">
+        <item name="android:layout">@layout/preference_category</item>
+        <!-- The title should not dim if the category is disabled, instead only the preference children should dim. -->
+        <item name="android:shouldDisableView">false</item>
+        <item name="android:selectable">false</item>
+    </style>
+    
+    <style name="Preference.CheckBoxPreference">
+        <item name="android:widgetLayout">@layout/preference_widget_checkbox</item>
+    </style>
+
+    <style name="Preference.DialogPreference">
+        <item name="android:positiveButtonText">@android:string/ok</item>
+        <item name="android:negativeButtonText">@android:string/cancel</item>
+    </style>
+    
+    <!-- Textes -->
+    
+    <style name="TextAppearance" parent="@android:style/TextAppearance"/>
+        
+    <style name="TextAppearance.Button">
+        <item name="android:textColor">@color/btn_selector</item>
+        <item name="android:textSize">18sp</item>
+    </style>
+        
+    <style name="TextAppearance.Preference"></style>
+        
+    <style name="TextAppearance.Preference.Title">
+        <item name="android:textColor">@color/preference_title_selector</item>
+        <item name="android:textSize">@dimen/preference_title</item>
+    </style>
+        
+    <style name="TextAppearance.Preference.Summary">
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textSize">@dimen/preference_summary</item>
+    </style>
+        
+    <style name="TextAppearance.Preference.Category">
+        <item name="android:textColor">@android:color/black</item>
+        <item name="android:textSize">@dimen/preference_category</item>
+    </style>
+
+</resources>
