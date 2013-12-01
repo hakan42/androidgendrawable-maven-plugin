@@ -197,9 +197,9 @@ public class Gen extends AbstractMojo {
         /*********************************************
          * List existing output drawable directories *
          *********************************************/
-        final Map<Density, List<Input>> destinations = new EnumMap<Density, List<Input>>(Density.class);
+        final Map<Density, List<QualifiedResource>> destinations = new EnumMap<Density, List<QualifiedResource>>(Density.class);
         for (Density d : _targetDensities) {
-            destinations.put(d, new ArrayList<Input>());
+            destinations.put(d, new ArrayList<QualifiedResource>());
         }
         final Set<Density> foundDensities = EnumSet.noneOf(Density.class);
         if (to.isDirectory()) {
@@ -227,7 +227,7 @@ public class Gen extends AbstractMojo {
                                     Density density = Density.valueOf(m2.group(1).toLowerCase());
                                     if (_targetDensities.isEmpty() 
                                             || _targetDensities.contains(density)) {
-                                        destinations.get(density).add(new Input(file, density, qualifiers));
+                                        destinations.get(density).add(new QualifiedResource(file, density, qualifiers));
                                         foundDensities.add(density);
                                     }
                                     return true;
@@ -237,7 +237,7 @@ public class Gen extends AbstractMojo {
                             } else {
                                 // drawable resources directory with no density qualifier
                                 try {
-                                    destinations.get(_fallbackDensity).add(new Input(file, _fallbackDensity, qualifiers));
+                                    destinations.get(_fallbackDensity).add(new QualifiedResource(file, _fallbackDensity, qualifiers));
                                     foundDensities.add(_fallbackDensity);
                                 } catch (IOException e) {
                                     getLog().error(e);
@@ -257,7 +257,7 @@ public class Gen extends AbstractMojo {
         /*****************************
          * List input svg to convert *
          *****************************/
-        final List<Input> svgToConvert = new ArrayList<Input>();
+        final List<QualifiedResource> svgToConvert = new ArrayList<QualifiedResource>();
         if (from.isDirectory()) {
             for (File f : from.listFiles(new FileFilter() {
                 public boolean accept(File file) {
@@ -275,7 +275,7 @@ public class Gen extends AbstractMojo {
                                 _qualifiers.retainAll(densityQualifiers);
                                 if (_qualifiers.size() == 1) {
                                     try {
-                                        svgToConvert.add(new Input(file, Density.valueOf(new ArrayList<String>(_qualifiers).get(0).toLowerCase()), qualifiers));
+                                        svgToConvert.add(new QualifiedResource(file, Density.valueOf(new ArrayList<String>(_qualifiers).get(0).toLowerCase()), qualifiers));
                                         return true;
                                     } catch (IOException e) {
                                         getLog().error(e);
@@ -295,13 +295,13 @@ public class Gen extends AbstractMojo {
             throw new MojoExecutionException(from.getAbsolutePath() + " is not a valid input directory");
         }
 
-        Input _highResIcon = null;
+        QualifiedResource _highResIcon = null;
         Rectangle2D _highResIconBounds = null;
         
         /*********************************
          * Create svg in res/* folder(s) *
          *********************************/
-        for (Input svg : svgToConvert) {
+        for (QualifiedResource svg : svgToConvert) {
             try {
                 Rectangle2D bounds = extractSVGBounds(svg);
                 if (highResIcon != null && highResIcon.equals(svg.targetName)) {
@@ -316,20 +316,20 @@ public class Gen extends AbstractMojo {
                 // - if no match, create required directories
                 for (Density d : _targetDensities) {
                     getLog().debug("Generating drawable for target density " + d.toString());
-                    final Collection<Input> filteredDestinations = filterDestinations(destinations.get(d), svg.qualifiers, createMissingDirectories);
+                    final Collection<QualifiedResource> filteredDestinations = filterDestinations(destinations.get(d), svg.qualifiers, createMissingDirectories);
                     if (filteredDestinations.isEmpty() && createMissingDirectories) {
                         // no matching directory - creating one
                         final String dirName = getInputClassifierDir(d, _fallbackDensity, svg.qualifiers);
                         getLog().debug("No matching directory found for qualifiers " + svg.qualifiers.toString() + " ... creating " + dirName);
                         File dir = new File(to, dirName);
                         dir.mkdir();
-                        Input in = new Input(dir, d, svg.qualifiers);
+                        QualifiedResource in = new QualifiedResource(dir, d, svg.qualifiers);
                         filteredDestinations.add(in);
                         destinations.get(d).add(in);
                     } else if (filteredDestinations.isEmpty()) {
                         getLog().debug("No matching directory found for qualifiers " + svg.qualifiers.toString() + " ... set createMissingDirectores to true to generate it automatically");
                     }
-                    for (Input destination : filteredDestinations) {
+                    for (QualifiedResource destination : filteredDestinations) {
                         getLog().info("Transcoding " + svg.getName() + " to " + destination.getName());
                         transcode(svg, bounds, destination, ninePatchMap.get(svg.targetName));
                     }
@@ -350,7 +350,7 @@ public class Gen extends AbstractMojo {
             try {
                 _highResIcon.targetName = "highResIcon";
                 // TODO : add a garbage density (NO_DENSITY) for the highResIcon
-                transcode(_highResIcon, _highResIconBounds, new Input(new File("."), Density.mdpi), 512, 512, null);
+                transcode(_highResIcon, _highResIconBounds, new QualifiedResource(new File("."), Density.mdpi), 512, 512, null);
             } catch (IOException e) {
                 getLog().error(e);
             } catch (TranscoderException e) {
@@ -388,9 +388,9 @@ public class Gen extends AbstractMojo {
      *          create a directory if no matching directory found
      * @return
      */
-    private Collection<Input> filterDestinations(final List<Input> directories, final Set<String> qualifiers, final boolean createMissingDirectories) {
-        Collection<Input> filteredDirectories = new ArrayList<Input>();
-        for (Input in : directories) {
+    private Collection<QualifiedResource> filterDestinations(final List<QualifiedResource> directories, final Set<String> qualifiers, final boolean createMissingDirectories) {
+        Collection<QualifiedResource> filteredDirectories = new ArrayList<QualifiedResource>();
+        for (QualifiedResource in : directories) {
             // input match requirements
             if (in.qualifiers.containsAll(qualifiers)) {
                 if (createMissingDirectories && !qualifiers.containsAll(in.qualifiers)) {
@@ -400,7 +400,7 @@ public class Gen extends AbstractMojo {
                 // otherwise, we keep the best matching existing input
                 // verify that no other matching input already covers current input qualifiers
                 boolean retain = true;
-                for (Input filtered : filteredDirectories) {
+                for (QualifiedResource filtered : filteredDirectories) {
                     if (filtered.qualifiers.containsAll(in.qualifiers)) {
                         // filtered contains current
                         // retain current and skip filtered
@@ -434,7 +434,7 @@ public class Gen extends AbstractMojo {
      * @throws MalformedURLException
      * @throws IOException
      */
-    private Rectangle2D extractSVGBounds(Input svg) throws MalformedURLException, IOException {
+    private Rectangle2D extractSVGBounds(QualifiedResource svg) throws MalformedURLException, IOException {
         String parser = XMLResourceDescriptor.getXMLParserClassName();
         SAXSVGDocumentFactory f = new SAXSVGDocumentFactory(parser);
         SVGDocument doc = (SVGDocument) f.createDocument(svg.toURI().toURL().toString());
@@ -455,7 +455,7 @@ public class Gen extends AbstractMojo {
      * @throws IOException
      * @throws TranscoderException
      */
-    private void transcode(Input svg, Rectangle2D bounds, Input dest, NinePatch ninePatch) throws IOException, TranscoderException {
+    private void transcode(QualifiedResource svg, Rectangle2D bounds, QualifiedResource dest, NinePatch ninePatch) throws IOException, TranscoderException {
         transcode(svg, bounds, dest, 
                 new Float(bounds.getWidth() * svg.density.ratio(dest.density)), 
                 new Float(bounds.getHeight() * svg.density.ratio(dest.density)),
@@ -474,7 +474,7 @@ public class Gen extends AbstractMojo {
      */
     // TODO : center inside option
     // TODO : preserve aspect ratio
-    private void transcode(Input svg, Rectangle2D bounds, Input dest, float targetWidth, float targetHeight, NinePatch ninePatch) throws IOException, TranscoderException {
+    private void transcode(QualifiedResource svg, Rectangle2D bounds, QualifiedResource dest, float targetWidth, float targetHeight, NinePatch ninePatch) throws IOException, TranscoderException {
         PNGTranscoder t = new PNGTranscoder();
         t.addTranscodingHint(PNGTranscoder.KEY_WIDTH, new Float(targetWidth));
         t.addTranscodingHint(PNGTranscoder.KEY_HEIGHT, new Float(targetHeight));
