@@ -55,8 +55,11 @@ public class QualifiedResource extends File {
         StringBuilder builder = new StringBuilder("drawable");
         for (Type type : EnumSet.allOf(Type.class)) {
             if (Type.density.equals(type)) {
-                builder.append("-");
-                builder.append(density.toString());
+                if (fallback == null || !fallback.equals(density)) {
+                    // skip qualifier for fallback density
+                    builder.append("-");
+                    builder.append(density.toString());
+                }
             } else if (typedQualifiers != null && typedQualifiers.containsKey(type)) {
                 builder.append("-");
                 builder.append(typedQualifiers.get(type).getValue());
