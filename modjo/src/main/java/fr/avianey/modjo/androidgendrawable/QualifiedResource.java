@@ -44,15 +44,25 @@ public class QualifiedResource extends File {
     private String name;
     private Map<Type, Qualifier> typedQualifiers;
     
-    private QualifiedResource(final File file, final String name, Map<Type, Qualifier> qualifiers) {
+    private QualifiedResource(final File file, final String name, final Map<Type, Qualifier> qualifiers) {
         super(file.getAbsolutePath());
         this.name = name;
         this.typedQualifiers = qualifiers;
         // TODO : pre-calculate output : drawable-fr-{density}-land
     }
     
-    public File getOutputFor(Density density) {
-        return null;
+    public File getOutputFor(final Density density, final File to, final Density fallback) {
+        StringBuilder builder = new StringBuilder("drawable");
+        for (Type type : EnumSet.allOf(Type.class)) {
+            if (Type.density.equals(type)) {
+                builder.append("-");
+                builder.append(density.toString());
+            } else if (typedQualifiers != null && typedQualifiers.containsKey(type)) {
+                builder.append("-");
+                builder.append(typedQualifiers.get(type).getValue());
+            }
+        }
+        return new File(to, builder.toString());
     }
     
     /**
@@ -67,6 +77,7 @@ public class QualifiedResource extends File {
         final String fileName = FilenameUtils.getBaseName(file.getAbsolutePath());
         Preconditions.checkArgument(extension.toLowerCase().equals("svg"));
         Preconditions.checkArgument(fileName.length() > 0);
+        Preconditions.checkArgument(fileName.indexOf("-") > 0);
         
         // unqualified name
         final String unqualifiedName = fileName.substring(0, fileName.indexOf("-"));
@@ -116,6 +127,10 @@ public class QualifiedResource extends File {
 
     public Map<Type, Qualifier> getTypedQualifiers() {
         return typedQualifiers;
+    }
+
+    public String getName() {
+        return name;
     }
     
 }
