@@ -50,7 +50,6 @@ public class QualifiedResourceTest {
                         {"name-xhdpi.svg", new Object[][] {{Type.density, "xhdpi"}}, Density.hdpi, null, "hdpi", true},
                         {"name-xxhdpi.svg", new Object[][] {{Type.density, "xxhdpi"}}, Density.hdpi, null, "hdpi", true},
                         {"name-xxxhdpi.svg", new Object[][] {{Type.density, "xxxhdpi"}}, Density.hdpi, null, "hdpi", true},
-                        {"name-nodpi.svg", new Object[][] {{Type.density, "nodpi"}}, Density.hdpi, null, "hdpi", true},
                         {"name-tvdpi.svg", new Object[][] {{Type.density, "tvdpi"}}, Density.hdpi, null, "hdpi", true},
                         {"name-ldpi.svg", new Object[][] {{Type.density, "ldpi"}}, Density.hdpi, Density.hdpi, "", true},
                         {"name-mdpi.svg", new Object[][] {{Type.density, "mdpi"}}, Density.hdpi, Density.ldpi, "hdpi", true},
@@ -87,6 +86,7 @@ public class QualifiedResourceTest {
                         }, Density.xxhdpi, Density.xxhdpi, "fr-land", true},
                         // error cases
                         {"mdpi-fr-land.svg", null, null, null, null, false},
+                        {"name-nodpi.svg", null, null, null, null, false},
                         {"name-mdpi-fr-land", null, null, null, null, false},
                         {"", null, null, null, null, false},
                         {null, null, null, null, null, false},
@@ -102,9 +102,7 @@ public class QualifiedResourceTest {
         QualifiedResource qr = null;
         try {
             qr = QualifiedResource.fromSvgFile(file);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) {}
         
         Assert.assertEquals(successExpected, qr != null);
         if (qr != null) {

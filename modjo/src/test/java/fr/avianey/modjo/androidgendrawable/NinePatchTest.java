@@ -21,7 +21,6 @@ public class NinePatchTest {
         try (final Reader reader = new InputStreamReader(this.getClass().getResourceAsStream("9patch.json"))) {
             Type t = new TypeToken<Map<String, NinePatch>>() {}.getType();
             Map<String, NinePatch> ninePatchMap = new GsonBuilder().create().fromJson(reader, t);
-            System.out.println("");
         }
     }
     

@@ -15,15 +15,16 @@ import fr.avianey.modjo.androidgendrawable.Qualifier.Type;
 public class QualifiedResource extends File {
     
     private static final long serialVersionUID = 1L;
-    
-    private String name;
-    private Map<Type, Qualifier> typedQualifiers;
+
+    private final String name;
+    private final Density density;
+    private final Map<Type, Qualifier> typedQualifiers;
     
     private QualifiedResource(final File file, final String name, final Map<Type, Qualifier> qualifiers) {
         super(file.getAbsolutePath());
         this.name = name;
         this.typedQualifiers = qualifiers;
-        // TODO : pre-calculate output : drawable-fr-{density}-land
+        this.density = Density.valueOf(typedQualifiers.get(Type.density).getValue());
     }
     
     public File getOutputFor(final Density density, final File to, final Density fallback) {
@@ -109,6 +110,10 @@ public class QualifiedResource extends File {
 
     public String getName() {
         return name;
+    }
+    
+    public Density getDensity() {
+        return density;
     }
     
 }

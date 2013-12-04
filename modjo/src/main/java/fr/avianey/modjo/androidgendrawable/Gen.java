@@ -17,16 +17,11 @@ import java.io.Reader;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 
@@ -42,7 +37,6 @@ import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.apache.batik.util.XMLResourceDescriptor;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.w3c.dom.svg.SVGDocument;
@@ -63,31 +57,6 @@ import fr.avianey.modjo.androidgendrawable.NinePatch.Zone;
 // TODO : handle multiple output directories with no density qualifier
 // TODO : ordered qualifiers (http://developer.android.com/guide/topics/resources/providing-resources.html#QualifierRules)
 public class Gen extends AbstractMojo {
-        
-    private static final Set<String> densityQualifiers = new HashSet<String>();
-    // TODO : matcher les pattern Android
-    private static Pattern resPattern = null;
-    static {
-        StringBuilder tb = new StringBuilder("drawable.*-");
-        StringBuilder db = new StringBuilder("(");
-        boolean first = true;
-        for (Density density : Density.values()) {
-            if (!first) {
-                db.append("|");
-            } else {
-                first = false;
-            }
-            db.append(density.name());
-            densityQualifiers.add(density.name().toLowerCase());
-        }
-        db.append(")");
-        tb.append(db.toString());
-        tb.append(".*");
-        resPattern = Pattern.compile(tb.toString(), Pattern.CASE_INSENSITIVE);
-    }
-    // TODO : matcher le pattern android
-    private static final Pattern qualifiersPattern = Pattern.compile("[^-]+((-[^-]+)+)", Pattern.CASE_INSENSITIVE);
-    
     
     /**
      * Directory of the svg resources to generate drawable from.
@@ -121,13 +90,6 @@ public class Gen extends AbstractMojo {
      * @parameter default-value="true"
      */
     private boolean createMissingDirectories;
-    
-    /**
-     * If set to false, will trascode to NODPI directories using the fallback density
-     * 
-     * @parameter default-value="true"
-     */
-    private boolean skipNoDpi;
 
     /**
      * Enumeration of desired target densities.
@@ -173,9 +135,11 @@ public class Gen extends AbstractMojo {
     public void execute() throws MojoExecutionException {
         
         // validating target densities specified in pom.xml
-        // untargetted densities will be ignored 
-        // except for the fallback density if specified
+        // untargetted densities will be ignored except for the fallback density if specified
         final Set<Density> _targetDensities = targetedDensities;
+        if (_targetDensities.isEmpty()) {
+            _targetDensities.addAll(EnumSet.allOf(Density.class));
+        }
         final Density _fallbackDensity = fallbackDensity;
         _targetDensities.add(_fallbackDensity);
         getLog().debug("Fallback density set to : " + fallbackDensity.toString());
@@ -194,66 +158,6 @@ public class Gen extends AbstractMojo {
             }
         }
         
-        /*********************************************
-         * List existing output drawable directories *
-         *********************************************/
-//        final Map<Density, List<QualifiedResource>> destinations = new EnumMap<Density, List<QualifiedResource>>(Density.class);
-//        for (Density d : _targetDensities) {
-//            destinations.put(d, new ArrayList<QualifiedResource>());
-//        }
-//        final Set<Density> foundDensities = EnumSet.noneOf(Density.class);
-//        if (to.isDirectory()) {
-//            for (File f : to.listFiles(new FileFilter() {
-//                public boolean accept(File file) {
-//                    String name = FilenameUtils.getName(file.getPath());
-//                    if (file.isDirectory() && name.startsWith("drawable")) {
-//                        if (skipNoDpi && name.toLowerCase().matches("drawable.*-nodpi(-.+){0,1}")) {
-//                            // skip noDpiDirectory
-//                            return false;
-//                        }
-//                        Matcher m1 = qualifiersPattern.matcher(name.toLowerCase());
-//                        if (m1.matches()) {
-//                            // extract qualifiers list
-//                            final Set<String> qualifiers = new HashSet<String>();
-//                            for (String qualifier : m1.group(1).substring(1).toLowerCase().split("-", -1)) {
-//                                qualifiers.add(qualifier);
-//                            }
-//                            qualifiers.removeAll(densityQualifiers);
-//                            // catalog output
-//                            Matcher m2 = resPattern.matcher(name.toLowerCase());
-//                            if (m2.matches()) {
-//                                // density classified directory
-//                                try {
-//                                    Density density = Density.valueOf(m2.group(1).toLowerCase());
-//                                    if (_targetDensities.isEmpty() 
-//                                            || _targetDensities.contains(density)) {
-//                                        destinations.get(density).add(new QualifiedResource(file, density, qualifiers));
-//                                        foundDensities.add(density);
-//                                    }
-//                                    return true;
-//                                } catch (IOException e) {
-//                                    getLog().error(e);
-//                                }
-//                            } else {
-//                                // drawable resources directory with no density qualifier
-//                                try {
-//                                    destinations.get(_fallbackDensity).add(new QualifiedResource(file, _fallbackDensity, qualifiers));
-//                                    foundDensities.add(_fallbackDensity);
-//                                } catch (IOException e) {
-//                                    getLog().error(e);
-//                                }
-//                            }
-//                        }
-//                    }
-//                    return false;
-//                }
-//            })) {
-//                getLog().debug("Found output destination : " + f.getAbsolutePath());
-//            }
-//        } else {
-//            throw new MojoExecutionException(to.getAbsolutePath() + " is not a valid output directory");
-//        }
-        
         /*****************************
          * List input svg to convert *
          *****************************/
@@ -265,7 +169,7 @@ public class Gen extends AbstractMojo {
                         try {
                             svgToConvert.add(QualifiedResource.fromSvgFile(file));
                             return true;
-                        } catch (IOException e) {
+                        } catch (Exception e) {
                             getLog().error(e);
                         }
                     }
@@ -307,7 +211,10 @@ public class Gen extends AbstractMojo {
                     }
                     if (destination.exists()) {
                         getLog().info("Transcoding " + svg.getName() + " to " + destination.getName());
-                        transcode(svg, bounds, destination, ninePatchMap.get(svg.getName()));
+                        transcode(svg, d, bounds, destination, ninePatchMap.get(svg.getName()));
+                    } else {
+                        getLog().info("Qualified output " + destination.getName() + " does not exists. " +
+                        		"Set createMissingDirectories to true if you want it to be created if missing...");
                     }
                 }
             } catch (MalformedURLException e) {
@@ -324,64 +231,14 @@ public class Gen extends AbstractMojo {
          ******************************************/
         if (_highResIcon != null) {
             try {
-                _highResIcon.targetName = "highResIcon";
                 // TODO : add a garbage density (NO_DENSITY) for the highResIcon
-                transcode(_highResIcon, _highResIconBounds, new QualifiedResource(new File("."), Density.mdpi), 512, 512, null);
+                transcode(_highResIcon, Density.mdpi, _highResIconBounds, new File("."), 512, 512, null);
             } catch (IOException e) {
                 getLog().error(e);
             } catch (TranscoderException e) {
                 getLog().error(e);
             }
         }
-    }
-
-    /**
-     * Filters directory with the svg constraints
-     * @param list
-     *          existing directories
-     * @param qualifiers
-     *          qualifiers targeted by the svg resource
-     * @param createMissingDirectories
-     *          create a directory if no matching directory found
-     * @return
-     */
-    private Collection<QualifiedResource> filterDestinations(final List<QualifiedResource> directories, final Set<String> qualifiers, final boolean createMissingDirectories) {
-        Collection<QualifiedResource> filteredDirectories = new ArrayList<QualifiedResource>();
-        for (QualifiedResource in : directories) {
-            // input match requirements
-            if (in.qualifiers.containsAll(qualifiers)) {
-                if (createMissingDirectories && !qualifiers.containsAll(in.qualifiers)) {
-                    // skip input as it doesn't match exactly the requested qualifiers
-                    continue;
-                }
-                // otherwise, we keep the best matching existing input
-                // verify that no other matching input already covers current input qualifiers
-                boolean retain = true;
-                for (QualifiedResource filtered : filteredDirectories) {
-                    if (filtered.qualifiers.containsAll(in.qualifiers)) {
-                        // filtered contains current
-                        // retain current and skip filtered
-                        filteredDirectories.remove(filtered);
-                        break;
-                    } else if (in.qualifiers.containsAll(filtered.qualifiers)) {
-                        // current contains filtered
-                        // skip current and retain filtered
-                        retain = false;
-                        break;
-                    } else {
-                        // disjunction, retain both
-                        // ex : sample-mdpi-fr.svg
-                        // >> "drawable-fr-mdpi-land/"
-                        // >> "drawable-fr-mdpi-port/"
-                        // and no "drawable-fr-mdpi/"
-                    }
-                }
-                if (retain) {
-                    filteredDirectories.add(in);
-                }
-            }
-        }
-        return filteredDirectories;
     }
 
     /**
@@ -407,21 +264,23 @@ public class Gen extends AbstractMojo {
     /**
      * Given it's bounds, transcodes a svg file to a PNG for the desired density
      * @param svg
+     * @param targetDensity 
      * @param bounds
      * @param destination
      * @throws IOException
      * @throws TranscoderException
      */
-    private void transcode(QualifiedResource svg, Rectangle2D bounds, File destination, NinePatch ninePatch) throws IOException, TranscoderException {
-        transcode(svg, bounds, destination, 
-                new Float(bounds.getWidth() * svg.density.ratio(destination.density)), 
-                new Float(bounds.getHeight() * svg.density.ratio(destination.density)),
+    private void transcode(QualifiedResource svg, Density targetDensity, Rectangle2D bounds, File destination, NinePatch ninePatch) throws IOException, TranscoderException {
+        transcode(svg, targetDensity, bounds, destination, 
+                new Float(bounds.getWidth() * svg.getDensity().ratio(targetDensity)), 
+                new Float(bounds.getHeight() * svg.getDensity().ratio(targetDensity)),
                 ninePatch);
     }
     
     /**
      * Given a desired width and height, transcodes a svg file to a PNG for the desired density
      * @param svg
+     * @param targetDensity 
      * @param bounds
      * @param dest
      * @param targetWidth
@@ -431,12 +290,12 @@ public class Gen extends AbstractMojo {
      */
     // TODO : center inside option
     // TODO : preserve aspect ratio
-    private void transcode(QualifiedResource svg, Rectangle2D bounds, QualifiedResource dest, float targetWidth, float targetHeight, NinePatch ninePatch) throws IOException, TranscoderException {
+    private void transcode(QualifiedResource svg, Density targetDensity, Rectangle2D bounds, File dest, float targetWidth, float targetHeight, NinePatch ninePatch) throws IOException, TranscoderException {
         PNGTranscoder t = new PNGTranscoder();
         t.addTranscodingHint(PNGTranscoder.KEY_WIDTH, new Float(targetWidth));
         t.addTranscodingHint(PNGTranscoder.KEY_HEIGHT, new Float(targetHeight));
         TranscoderInput input = new TranscoderInput(svg.toURI().toURL().toString());
-        String outputName = svg.targetName;
+        String outputName = svg.getName();
         if (rename.containsKey(outputName)) {
             if (rename.get(outputName) != null && rename.get(outputName).matches("\\w+")) {
                 outputName = rename.get(outputName);
@@ -467,7 +326,7 @@ public class Gen extends AbstractMojo {
             InputStream istream = new ByteArrayInputStream(ostream.toByteArray());
             ostream.close();
             ostream = null;
-            toNinePatch(istream, finalName, ninePatch, svg.density.ratio(dest.density));
+            toNinePatch(istream, finalName, ninePatch, svg.getDensity().ratio(targetDensity));
         }
     }
     
