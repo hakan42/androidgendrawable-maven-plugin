@@ -1,11 +1,9 @@
 package fr.avianey.modjo.androidgendrawable;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -17,29 +15,6 @@ import fr.avianey.modjo.androidgendrawable.Qualifier.Type;
 public class QualifiedResource extends File {
     
     private static final long serialVersionUID = 1L;
-    
-    public Density density;
-    public String targetName;
-    public Set<String> qualifiers;
-
-    public QualifiedResource(File file, Density density) throws IOException {
-        super(file.getCanonicalPath());
-        this.density = density;
-        this.targetName = FilenameUtils.getBaseName(getName()).toLowerCase()
-                .replaceAll("-" + density.name().toLowerCase(), "");
-    }
-
-    public QualifiedResource(File file, Density density, Set<String> classifiers) throws IOException {
-        this(file, density);
-        this.qualifiers = classifiers;
-        if (classifiers != null) {
-            for (String classifier : classifiers) {
-                this.targetName = this.targetName.replaceAll("-" + classifier, "");
-            }
-        }
-    }
-    
-    /**/
     
     private String name;
     private Map<Type, Qualifier> typedQualifiers;
