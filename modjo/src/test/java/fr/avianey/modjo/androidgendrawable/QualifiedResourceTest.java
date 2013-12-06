@@ -19,7 +19,7 @@ import fr.avianey.modjo.androidgendrawable.Qualifier.Type;
 public class QualifiedResourceTest {
 
     private final String name;
-    private final Map<Type, Qualifier> typedQualifiers;
+    private final Map<Type, String> typedQualifiers;
     private final boolean successExpected;
     private final Density density;
     private final Density fallbackDensity;
@@ -31,7 +31,7 @@ public class QualifiedResourceTest {
         this.typedQualifiers = new EnumMap<>(Type.class);
         if (qualifiers != null) {
             for (Object[] o : qualifiers) {
-                typedQualifiers.put((Type) o[0], new Qualifier((Type) o[0], (String) o[1]));
+                typedQualifiers.put((Type) o[0], (String) o[1]);
             }
         }
         this.density = density;
@@ -109,8 +109,7 @@ public class QualifiedResourceTest {
             Assert.assertTrue(qr.getTypedQualifiers().keySet().containsAll(typedQualifiers.keySet())
                     && typedQualifiers.keySet().containsAll(qr.getTypedQualifiers().keySet()));
             for (Type t : typedQualifiers.keySet()) {
-                Assert.assertEquals(typedQualifiers.get(t).getValue(), 
-                        qr.getTypedQualifiers().get(t).getValue());
+                Assert.assertEquals(typedQualifiers.get(t), qr.getTypedQualifiers().get(t));
             }
             // verify name
             Assert.assertEquals(outputDirectory.getAbsolutePath(), qr.getOutputFor(density, new File("."), fallbackDensity).getAbsolutePath());

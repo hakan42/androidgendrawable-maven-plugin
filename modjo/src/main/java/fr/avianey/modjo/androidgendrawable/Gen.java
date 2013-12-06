@@ -18,7 +18,6 @@ import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,7 +52,7 @@ import fr.avianey.modjo.androidgendrawable.NinePatch.Zone;
  */
 // TODO : delete PNG with the same name as target PNG
 // TODO : JPEG or PNG
-// TODO : 9-Patch
+// TODO : 9-Patch config doit tenir compte des classifiers
 // TODO : handle multiple output directories with no density qualifier
 // TODO : ordered qualifiers (http://developer.android.com/guide/topics/resources/providing-resources.html#QualifierRules)
 public class Gen extends AbstractMojo {
@@ -129,7 +128,7 @@ public class Gen extends AbstractMojo {
      * @parameter
      * @parameter default-value=null
      */
-    private String ninePatchConfig;
+    private File ninePatchConfig;
     
     @SuppressWarnings("unchecked")
     public void execute() throws MojoExecutionException {
@@ -148,11 +147,12 @@ public class Gen extends AbstractMojo {
          * Load NinePatch configuration *
          ********************************/
         
-        Map<String, NinePatch> ninePatchMap = new HashMap<>();
+        NinePatchMap ninePatchMap = new NinePatchMap();
         if (ninePatchConfig != null) {
             try (final Reader reader = new FileReader(ninePatchConfig)) {
-                Type t = new TypeToken<Map<String, NinePatch>>(){}.getType();
-                ninePatchMap.putAll((Map<String, NinePatch>) (new GsonBuilder().create().fromJson(reader, t)));
+                Type t = new TypeToken<Set<NinePatch>>(){}.getType();
+                Set<NinePatch> _ninePatchMap = (Set<NinePatch>) (new GsonBuilder().create().fromJson(reader, t));
+                ninePatchMap = NinePatch.init(_ninePatchMap);
             } catch (IOException e) {
                 getLog().error(e);
             }
@@ -161,6 +161,7 @@ public class Gen extends AbstractMojo {
         /*****************************
          * List input svg to convert *
          *****************************/
+        
         final List<QualifiedResource> svgToConvert = new ArrayList<QualifiedResource>();
         if (from.isDirectory()) {
             for (File f : from.listFiles(new FileFilter() {
@@ -211,7 +212,7 @@ public class Gen extends AbstractMojo {
                     }
                     if (destination.exists()) {
                         getLog().info("Transcoding " + svg.getName() + " to " + destination.getName());
-                        transcode(svg, d, bounds, destination, ninePatchMap.get(svg.getName()));
+                        transcode(svg, d, bounds, destination, ninePatchMap.get(svg));
                     } else {
                         getLog().info("Qualified output " + destination.getName() + " does not exists. " +
                         		"Set createMissingDirectories to true if you want it to be created if missing...");
@@ -352,26 +353,35 @@ public class Gen extends AbstractMojo {
         // draw patch
         g.setColor(Color.BLACK);
         Zone stretch = ninePatch.getStretch();
-        for (int[] seg : stretch.getX()) {
-            final int start = (int) Math.floor(seg[0] * ratio);
-            final int stop = (int) Math.ceil(seg[1] * ratio);
-            g.fillRect(start, 0, stop, 1);
+        int[][] segment = null;
+        if (stretch.getX() != null) {
+            segment = stretch.getX();
+            for (int[] seg : stretch.getX()) {
+                final int start = Math.max(1, (int) Math.floor(seg[0] * ratio));
+                final int size = Math.min(w - start - 1, Math.max(1, (int) Math.ceil((seg[1] - seg[0]) * ratio)));
+                g.fillRect(start, 0, size, 1);
+            }
         }
-        for (int[] seg : stretch.getY()) {
-            final int start = (int) Math.floor(seg[0] * ratio);
-            final int stop = (int) Math.ceil(seg[1] * ratio);
-            g.fillRect(0, start, 1, stop);
+        if (stretch.getY() != null) {
+            segment = stretch.getY();
+            for (int[] seg : stretch.getY()) {
+                final int start = Math.max(1, (int) Math.floor(seg[0] * ratio));
+                final int size = Math.min(h - start - 1, Math.max(1, (int) Math.ceil((seg[1] - seg[0]) * ratio)));
+                g.fillRect(0, start, 1, size);
+            }
         }
         Zone content = ninePatch.getContent();
-        for (int[] seg : content.getX()) {
-            final int start = (int) Math.floor(seg[0] * ratio);
-            final int stop = (int) Math.ceil(seg[1] * ratio);
-            g.fillRect(start, h + 1, stop, 1);
+        segment = content.getX() == null ? new int[][] {{0, w}} : content.getX();
+        for (int[] seg : segment) {
+            final int start = Math.max(1, (int) Math.floor(seg[0] * ratio));
+            final int size = Math.min(w - start - 1, Math.max(1, (int) Math.ceil((seg[1] - seg[0]) * ratio)));
+            g.fillRect(start, h + 1, size, 1);
         }
-        for (int[] seg : content.getY()) {
-            final int start = (int) Math.floor(seg[0] * ratio);
-            final int stop = (int) Math.ceil(seg[1] * ratio);
-            g.fillRect(w + 1, start, 1, stop);
+        segment = content.getY() == null ? new int[][] {{0, h}} : content.getY();
+        for (int[] seg : segment) {
+            final int start = Math.max(1, (int) Math.floor(seg[0] * ratio));
+            final int size = Math.min(h - start - 1, Math.max(1, (int) Math.ceil((seg[1] - seg[0]) * ratio)));
+            g.fillRect(w + 1, start, 1, size);
         }
         
         ImageIO.write(ninePatchImage, "png", new File(finalName));

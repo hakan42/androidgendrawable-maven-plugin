@@ -18,13 +18,13 @@ public class QualifiedResource extends File {
 
     private final String name;
     private final Density density;
-    private final Map<Type, Qualifier> typedQualifiers;
+    private final Map<Type, String> typedQualifiers;
     
-    private QualifiedResource(final File file, final String name, final Map<Type, Qualifier> qualifiers) {
+    private QualifiedResource(final File file, final String name, final Map<Type, String> qualifiers) {
         super(file.getAbsolutePath());
         this.name = name;
         this.typedQualifiers = qualifiers;
-        this.density = Density.valueOf(typedQualifiers.get(Type.density).getValue());
+        this.density = Density.valueOf(typedQualifiers.get(Type.density));
     }
     
     public File getOutputFor(final Density density, final File to, final Density fallback) {
@@ -38,7 +38,7 @@ public class QualifiedResource extends File {
                 }
             } else if (typedQualifiers != null && typedQualifiers.containsKey(type)) {
                 builder.append("-");
-                builder.append(typedQualifiers.get(type).getValue());
+                builder.append(typedQualifiers.get(type));
             }
         }
         return new File(to, builder.toString());
@@ -63,7 +63,7 @@ public class QualifiedResource extends File {
         Preconditions.checkArgument(unqualifiedName != null && unqualifiedName.matches("\\w+"));
         
         // qualifiers
-        final Map<Type, Qualifier> typedQualifiers = new EnumMap<>(Type.class);
+        final Map<Type, String> typedQualifiers = new EnumMap<>(Type.class);
         String qualifiers = fileName.substring(fileName.indexOf("-") + 1);
         Preconditions.checkArgument(qualifiers.length() > 0);
         
@@ -77,18 +77,18 @@ public class QualifiedResource extends File {
                 qualifiers = qualifiers.substring(i + 1);
             }
             
-            Qualifier q = null;
+            String qualifier = null;
             for (Type type : EnumSet.allOf(Type.class)) {
                 Acceptor a = new Acceptor(type);
-                q = a.accept(qualifiers);
-                if (q != null) {
-                    qualifiers = qualifiers.substring(q.getValue().length());
-                    typedQualifiers.put(type, q);
+                qualifier = a.accept(qualifiers);
+                if (qualifier != null) {
+                    qualifiers = qualifiers.substring(qualifier.length());
+                    typedQualifiers.put(type, qualifier);
                     break;
                 }
             }
             
-            if (q == null) {
+            if (qualifier == null) {
                 if (qualifiers.indexOf("-") < 0) {
                     break;
                 } else {
@@ -104,7 +104,7 @@ public class QualifiedResource extends File {
         return new QualifiedResource(file, unqualifiedName, typedQualifiers);
     }
 
-    public Map<Type, Qualifier> getTypedQualifiers() {
+    public Map<Type, String> getTypedQualifiers() {
         return typedQualifiers;
     }
 

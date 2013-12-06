@@ -33,11 +33,9 @@ public class Qualifier {
     
     public static class Acceptor {
 
-        private final Type type;
         private final String regexp;
         
         public Acceptor(Type type) {
-            this.type = type;
             // (capturingregexp)(-.*)*
             this.regexp = new StringBuilder("(")
                     .append(type.getRegexp())
@@ -52,17 +50,17 @@ public class Qualifier {
          * then the input is not a valid resource directory name... 
          * @param input
          * @return
-         *      The {@link Qualifier} or null if no {@link Qualifier} of the desired {@link Type} is found
+         *      The qualifier value or null if no qualifier of the desired {@link Type} is found
          *      at the <u>beginning</u> of the input {@link String}. 
          */
-        public Qualifier accept(String input) {
+        public String accept(String input) {
             Pattern p = Pattern.compile(regexp());
             Matcher m = p.matcher(input);
-            Qualifier q = null;
+            String qualifier = null;
             if (m.matches() && m.groupCount() > 0) {
-                q = new Qualifier(type, m.group(1));
+                qualifier = m.group(1);
             }
-            return q;
+            return qualifier;
         }
 
         /**
@@ -112,21 +110,4 @@ public class Qualifier {
 
     }
     
-    private final Type type;
-    private final String value;
-    
-    public Qualifier(Type type, String value) {
-        this.type = type;
-        this.value = value;
-    }
-    
-    public Type getType() {
-        return type;
-    }
-
-    public String getValue() {
-        return value;
-    }
-    
-
 }
