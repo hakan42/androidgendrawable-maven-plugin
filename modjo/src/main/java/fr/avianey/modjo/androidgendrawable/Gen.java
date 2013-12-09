@@ -354,34 +354,30 @@ public class Gen extends AbstractMojo {
         g.setColor(Color.BLACK);
         Zone stretch = ninePatch.getStretch();
         int[][] segment = null;
-        if (stretch.getX() != null) {
-            segment = stretch.getX();
-            for (int[] seg : stretch.getX()) {
-                final int start = Math.max(1, (int) Math.floor(seg[0] * ratio));
-                final int size = Math.min(w - start - 1, Math.max(1, (int) Math.ceil((seg[1] - seg[0]) * ratio)));
-                g.fillRect(start, 0, size, 1);
-            }
+        segment = stretch.getX() == null ? new int[][] {{0, w}} : stretch.getX();
+        for (int[] seg : segment) {
+            final int start = NinePatch.start(seg[0], seg[1], w, ratio);
+            final int size = NinePatch.size(seg[0], seg[1], w, ratio);
+            g.fillRect(start + 1, 0, size, 1);
         }
-        if (stretch.getY() != null) {
-            segment = stretch.getY();
-            for (int[] seg : stretch.getY()) {
-                final int start = Math.max(1, (int) Math.floor(seg[0] * ratio));
-                final int size = Math.min(h - start - 1, Math.max(1, (int) Math.ceil((seg[1] - seg[0]) * ratio)));
-                g.fillRect(0, start, 1, size);
-            }
+        segment = stretch.getY() == null ? new int[][] {{0, h}} : stretch.getY();
+        for (int[] seg : segment) {
+            final int start = NinePatch.start(seg[0], seg[1], w, ratio);
+            final int size = NinePatch.size(seg[0], seg[1], w, ratio);
+            g.fillRect(0, start + 1, 1, size);
         }
         Zone content = ninePatch.getContent();
         segment = content.getX() == null ? new int[][] {{0, w}} : content.getX();
         for (int[] seg : segment) {
-            final int start = Math.max(1, (int) Math.floor(seg[0] * ratio));
-            final int size = Math.min(w - start - 1, Math.max(1, (int) Math.ceil((seg[1] - seg[0]) * ratio)));
-            g.fillRect(start, h + 1, size, 1);
+            final int start = NinePatch.start(seg[0], seg[1], w, ratio);
+            final int size = NinePatch.size(seg[0], seg[1], w, ratio);
+            g.fillRect(start + 1, h + 1, size, 1);
         }
         segment = content.getY() == null ? new int[][] {{0, h}} : content.getY();
         for (int[] seg : segment) {
-            final int start = Math.max(1, (int) Math.floor(seg[0] * ratio));
-            final int size = Math.min(h - start - 1, Math.max(1, (int) Math.ceil((seg[1] - seg[0]) * ratio)));
-            g.fillRect(w + 1, start, 1, size);
+            final int start = NinePatch.start(seg[0], seg[1], w, ratio);
+            final int size = NinePatch.size(seg[0], seg[1], w, ratio);
+            g.fillRect(w + 1, start + 1, 1, size);
         }
         
         ImageIO.write(ninePatchImage, "png", new File(finalName));

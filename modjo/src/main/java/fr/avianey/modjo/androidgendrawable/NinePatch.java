@@ -71,7 +71,6 @@ public class NinePatch {
         return content;
     }
 
-
     /**
      * @return the typedQualifiers
      */
@@ -109,4 +108,30 @@ public class NinePatch {
         return map;
     }
 
+    /**
+     * Normalized start of the NinePatch segment<br/>
+     * The start cannot be higher than d...
+     * @param start
+     * @param stop
+     * @param d : normalized dimension of the density specific drawable (ratio applied)
+     * @param ratio
+     * @return
+     */
+    public static final int start(int start, int stop, int d, double ratio) {
+        return Math.min(d - 1, (int) Math.floor(start * ratio));
+    }
+    
+    /**
+     * Normalized size of the NinePatch segment<br/>
+     * The size cannot be lower than 1 and greater than (d - start)...
+     * @param start
+     * @param stop
+     * @param d : normalized dimension of the density specific drawable (ratio applied)
+     * @param ratio
+     * @return
+     */
+    public static final int size(int start, int stop, int d, double ratio) {
+        return Math.min(d - start(start, stop, d, ratio), Math.max(1, (int) Math.floor((stop - start) * ratio)));
+    }
+    
 }

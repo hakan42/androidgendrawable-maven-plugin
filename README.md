@@ -14,15 +14,19 @@ You can fork the project from GitHub [here](https://github.com/avianey/Level).
 
 SVG files use to generate density specific drawable must specify a width and height like this :
 
-    <svg
-      x="0px"
-      y="0px"
-      width="96"
-      height="96"
-
+```xml
+<svg
+   x="0px"
+   y="0px"
+   width="96"
+   height="96"
+```
+	  
 This will define the bounding box of the drawable content. Everything that is drawn outside off this bounding box will no be rendered in the resulting transcoded PNG drawable. 
 Inkscape provides a way to make the SVG bounding bow match the content edges. 
 If you want the bounding box to be larger than the content (with extra border), you'll need to add an extra transparent shape that is larger than the content.  
+  
+It is preferable for your SVG file dimensions to be a multiple of 32 and adjusted to mdpi so they can be scaled to any density without rounding the bounding box.
 
 ## How to use
 
