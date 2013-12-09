@@ -36,6 +36,7 @@ import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.apache.batik.util.XMLResourceDescriptor;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.w3c.dom.svg.SVGDocument;
@@ -166,7 +167,7 @@ public class Gen extends AbstractMojo {
         if (from.isDirectory()) {
             for (File f : from.listFiles(new FileFilter() {
                 public boolean accept(File file) {
-                    if (file.isFile()) {
+                    if (file.isFile() && "svg".equalsIgnoreCase(FilenameUtils.getExtension(file.getAbsolutePath()))) {
                         try {
                             svgToConvert.add(QualifiedResource.fromSvgFile(file));
                             return true;
