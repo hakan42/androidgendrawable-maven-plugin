@@ -18,23 +18,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.actionbarsherlock</groupId>
-            <artifactId>actionbarsherlock</artifactId>
-            <version>4.3.1</version>
-            <type>apklib</type>
-            <exclusions>
-                <exclusion>
-                    <artifactId>support-v4</artifactId>
-                    <groupId>com.google.android</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>android.support</groupId>
-            <artifactId>compatibility-v4</artifactId>
-            <version>13</version>
-        </dependency>
-        <dependency>
             <groupId>android</groupId>
             <artifactId>android</artifactId>
             <version>4.3_r1</version>
@@ -43,13 +26,52 @@
     </dependencies>
 
     <build>
-        <finalName>${project.name}</finalName>
         
         <plugins>
             
             <plugin>
+                <groupId>fr.avianey.modjo</groupId>
+                <artifactId>androidgendrawable-maven-plugin</artifactId>
+                <configuration>
+                    <!-- where to pick the svg -->
+                    <from>${project.basedir}/svg</from>
+                    <!-- where to generate them -->
+                    <to>${project.basedir}/res</to>
+                    <!-- use key/value pairs to replace original resource names (key) by other names (value) -->
+                    <rename></rename>
+                    <!-- skip already generated resources (always|never|ifModified) -->
+                    <override>ifModified</override>
+                    <!-- create or skip missing directories -->
+                    <createMissingDirectories>true</createMissingDirectories>
+                    <targetedDensities>
+                        <!-- let skip ldpi & tvdpi here -->
+                        <densitys>hdpi</densitys>
+                        <densitys>xhdpi</densitys>
+                        <densitys>xxhdpi</densitys>
+                        <densitys>xxxhdpi</densitys>
+                    </targetedDensities>
+                    <!-- use no qualifier for mdpi drawables -->
+                    <!-- TODO : bug if no existing folder with no density qualifier -->
+                    <fallbackDensity>mdpi</fallbackDensity>
+                    <!-- use the app icon to generate the High Res Icon for Google Play -->
+                    <highResIcon>icon</highResIcon>
+                    <!-- NinePatch config file -->
+                    <ninePatchConfig>${project.basedir}/svg/9patch.json</ninePatchConfig>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>gen</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <plugin>
                 <groupId>com.jayway.maven.plugins.android.generation2</groupId>
                 <artifactId>android-maven-plugin</artifactId>
+                <version>3.8.1</version>
                 <configuration>
                     <sign>
                         <debug>true</debug>
@@ -59,10 +81,9 @@
                     <resourceDirectory>${project.basedir}/res</resourceDirectory>
                     <nativeLibrariesDirectory>${project.basedir}/src/main/native</nativeLibrariesDirectory>
                     <sdk>
-                        <platform>18</platform>
+                        <platform>19</platform>
                     </sdk>
                     <undeployBeforeDeploy>false</undeployBeforeDeploy>
-                    <file>${project.build.directory}/${project.name}-release.apk</file>
                 </configuration>
                 <extensions>true</extensions>
                 <executions>
@@ -93,44 +114,6 @@
                     <source>1.6</source>
                     <target>1.6</target>
                 </configuration>
-            </plugin>
-            
-            <plugin>
-                <groupId>fr.avianey.modjo</groupId>
-                <artifactId>androidgendrawable-maven-plugin</artifactId>
-                <configuration>
-                    <!-- where to pick the svg -->
-                    <from>${project.basedir}/svg</from>
-                    <!-- where to generate them -->
-                    <to>${project.basedir}/res</to>
-                    <rename></rename>
-                    <!-- TODO : skip already generated resources -->
-                    <!-- <override>false</override> -->
-                    <!-- create or skip missing directories -->
-                    <createMissingDirectories>true</createMissingDirectories>
-                    <targetedDensities>
-                        <!-- let skip ldpi & tvdpi here -->
-                        <densitys>hdpi</densitys>
-                        <densitys>xhdpi</densitys>
-                        <densitys>xxhdpi</densitys>
-                        <densitys>xxxhdpi</densitys>
-                    </targetedDensities>
-                    <!-- use no qualifier for mdpi drawables -->
-                    <!-- TODO : bug if no existing folder with no density qualifier -->
-                    <fallbackDensity>mdpi</fallbackDensity>
-					<!-- generate nothing in -nodpi directories -->
-                    <skipNoDpi>true</skipNoDpi>
-                    <!-- use the app icon to generate the High Res Icon for Google Play -->
-                    <highResIcon>icon</highResIcon>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>gen</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             
         </plugins>

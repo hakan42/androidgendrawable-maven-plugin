@@ -17,8 +17,7 @@
         android:allowBackup="true"
         android:allowClearUserData="true"
         android:icon="@drawable/icon"
-        android:label="@string/androidgendrawable"
-        android:theme="@android:style/DeviceDefault" >
+        android:label="@string/androidgendrawable" >
         <activity
             android:name=".SampleActivity"
             android:label="@string/androidgendrawable"

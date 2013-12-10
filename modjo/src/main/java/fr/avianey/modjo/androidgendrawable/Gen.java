@@ -126,10 +126,16 @@ public class Gen extends AbstractMojo {
     /**
      * Path to the 9-patch drawable configuration file.
      * 
-     * @parameter
      * @parameter default-value=null
      */
     private File ninePatchConfig;
+    
+    /**
+     * Override existing generated resources.
+     * 
+     * @parameter default-value="always"
+     */
+    private OverrideMode override;
     
     @SuppressWarnings("unchecked")
     public void execute() throws MojoExecutionException {
@@ -192,21 +198,24 @@ public class Gen extends AbstractMojo {
         /*********************************
          * Create svg in res/* folder(s) *
          *********************************/
+        
         for (QualifiedResource svg : svgToConvert) {
             try {
+                getLog().info("Handling " + FilenameUtils.getName(svg.getAbsolutePath()));
                 Rectangle2D bounds = extractSVGBounds(svg);
+                if (getLog().isDebugEnabled()) {
+                    getLog().debug(">> Parsing : bounds [width=" + bounds.getWidth() + " - height=" + bounds.getHeight() + "]");
+                }
                 if (highResIcon != null && highResIcon.equals(svg.getName())) {
                     _highResIcon = svg;
                     _highResIconBounds = bounds;
                 }
-                getLog().debug("Generating drawable from " + svg.getName());
                 // for each target density :
                 // - find matching destinations :
                 //   - matches all extra qualifiers
                 //   - no other output with a qualifiers set that is a subset of this output
                 // - if no match, create required directories
                 for (Density d : _targetDensities) {
-                    getLog().debug("Generating drawable for target density " + d.toString());
                     File destination = svg.getOutputFor(d, to, _fallbackDensity);
                     if (!destination.exists() && createMissingDirectories) {
                         destination.mkdir();
@@ -231,9 +240,11 @@ public class Gen extends AbstractMojo {
         /******************************************
          * Generates the play store high res icon *
          ******************************************/
+        
         if (_highResIcon != null) {
             try {
                 // TODO : add a garbage density (NO_DENSITY) for the highResIcon
+                getLog().info("Transcoding " + _highResIcon.getName() + " to high resolution icon");
                 transcode(_highResIcon, Density.mdpi, _highResIconBounds, new File("."), 512, 512, null);
             } catch (IOException e) {
                 getLog().error(e);
@@ -293,9 +304,14 @@ public class Gen extends AbstractMojo {
     // TODO : center inside option
     // TODO : preserve aspect ratio
     private void transcode(QualifiedResource svg, Density targetDensity, Rectangle2D bounds, File dest, float targetWidth, float targetHeight, NinePatch ninePatch) throws IOException, TranscoderException {
+        Float width = new Float(Math.floor(targetWidth));
+        Float height = new Float(Math.floor(targetHeight));
+        if (getLog().isDebugEnabled()) {
+            getLog().debug(">> Transcoding : dimensions [width=" + width + " - length=" + height +"]");
+        }
         PNGTranscoder t = new PNGTranscoder();
-        t.addTranscodingHint(PNGTranscoder.KEY_WIDTH, new Float(targetWidth));
-        t.addTranscodingHint(PNGTranscoder.KEY_HEIGHT, new Float(targetHeight));
+        t.addTranscodingHint(PNGTranscoder.KEY_WIDTH, width);
+        t.addTranscodingHint(PNGTranscoder.KEY_HEIGHT, height);
         TranscoderInput input = new TranscoderInput(svg.toURI().toURL().toString());
         String outputName = svg.getName();
         if (rename.containsKey(outputName)) {
@@ -311,24 +327,28 @@ public class Gen extends AbstractMojo {
             .append(ninePatch != null ? ".9" : "")
             .append(".png")
             .toString();
-        if (ninePatch == null) {
-            // write file directly
-            OutputStream ostream = new FileOutputStream(finalName);
-            TranscoderOutput output = new TranscoderOutput(ostream);
-            t.transcode(input, output);
-            ostream.flush();
-            ostream.close();
+        if (override.override(svg, new File(finalName))) {
+            if (ninePatch == null) {
+                // write file directly
+                OutputStream ostream = new FileOutputStream(finalName);
+                TranscoderOutput output = new TranscoderOutput(ostream);
+                t.transcode(input, output);
+                ostream.flush();
+                ostream.close();
+            } else {
+                // write in memory
+                ByteArrayOutputStream ostream = new ByteArrayOutputStream();
+                TranscoderOutput output = new TranscoderOutput(ostream);
+                t.transcode(input, output);
+                // fill the patch
+                ostream.flush();
+                InputStream istream = new ByteArrayInputStream(ostream.toByteArray());
+                ostream.close();
+                ostream = null;
+                toNinePatch(istream, finalName, ninePatch, svg.getDensity().ratio(targetDensity));
+            }
         } else {
-            // write in memory
-            ByteArrayOutputStream ostream = new ByteArrayOutputStream();
-            TranscoderOutput output = new TranscoderOutput(ostream);
-            t.transcode(input, output);
-            // fill the patch
-            ostream.flush();
-            InputStream istream = new ByteArrayInputStream(ostream.toByteArray());
-            ostream.close();
-            ostream = null;
-            toNinePatch(istream, finalName, ninePatch, svg.getDensity().ratio(targetDensity));
+            getLog().info(finalName + " already exists and is up to date... skiping generation!");
         }
     }
     
@@ -359,12 +379,18 @@ public class Gen extends AbstractMojo {
         for (int[] seg : segment) {
             final int start = NinePatch.start(seg[0], seg[1], w, ratio);
             final int size = NinePatch.size(seg[0], seg[1], w, ratio);
+            if (getLog().isDebugEnabled()) {
+                getLog().debug(">> NinePatch : stretch(x) [start=" + start + " - size=" + size + "]");
+            }
             g.fillRect(start + 1, 0, size, 1);
         }
         segment = stretch.getY() == null ? new int[][] {{0, h}} : stretch.getY();
         for (int[] seg : segment) {
-            final int start = NinePatch.start(seg[0], seg[1], w, ratio);
-            final int size = NinePatch.size(seg[0], seg[1], w, ratio);
+            final int start = NinePatch.start(seg[0], seg[1], h, ratio);
+            final int size = NinePatch.size(seg[0], seg[1], h, ratio);
+            if (getLog().isDebugEnabled()) {
+                getLog().debug(">> NinePatch : stretch(y) [start=" + start + " - size=" + size + "]");
+            }
             g.fillRect(0, start + 1, 1, size);
         }
         Zone content = ninePatch.getContent();
@@ -372,12 +398,18 @@ public class Gen extends AbstractMojo {
         for (int[] seg : segment) {
             final int start = NinePatch.start(seg[0], seg[1], w, ratio);
             final int size = NinePatch.size(seg[0], seg[1], w, ratio);
+            if (getLog().isDebugEnabled()) {
+                getLog().debug(">> NinePatch : content(x) [start=" + start + " - size=" + size + "]");
+            }
             g.fillRect(start + 1, h + 1, size, 1);
         }
         segment = content.getY() == null ? new int[][] {{0, h}} : content.getY();
         for (int[] seg : segment) {
-            final int start = NinePatch.start(seg[0], seg[1], w, ratio);
-            final int size = NinePatch.size(seg[0], seg[1], w, ratio);
+            final int start = NinePatch.start(seg[0], seg[1], h, ratio);
+            final int size = NinePatch.size(seg[0], seg[1], h, ratio);
+            if (getLog().isDebugEnabled()) {
+                getLog().debug(">> NinePatch : content(y) [start=" + start + " - size=" + size + "]");
+            }
             g.fillRect(w + 1, start + 1, 1, size);
         }
         
