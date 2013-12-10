@@ -314,7 +314,7 @@ public class Gen extends AbstractMojo {
         t.addTranscodingHint(PNGTranscoder.KEY_HEIGHT, height);
         TranscoderInput input = new TranscoderInput(svg.toURI().toURL().toString());
         String outputName = svg.getName();
-        if (rename.containsKey(outputName)) {
+        if (rename != null && rename.containsKey(outputName)) {
             if (rename.get(outputName) != null && rename.get(outputName).matches("\\w+")) {
                 outputName = rename.get(outputName);
             } else {
