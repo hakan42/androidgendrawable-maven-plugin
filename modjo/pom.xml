@@ -9,7 +9,7 @@
 	<groupId>fr.avianey.modjo</groupId>
 	<artifactId>androidgendrawable-maven-plugin</artifactId>
 	<packaging>maven-plugin</packaging>
-	<version>1.0-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<name>AndroidGenDrawable Maven Plugin</name>
 	<url>https://github.com/avianey/androidgendrawable-maven-plugin</url>
     

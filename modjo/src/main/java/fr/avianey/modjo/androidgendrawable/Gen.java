@@ -244,7 +244,7 @@ public class Gen extends AbstractMojo {
         if (_highResIcon != null) {
             try {
                 // TODO : add a garbage density (NO_DENSITY) for the highResIcon
-                getLog().info("Transcoding " + _highResIcon.getName() + " to high resolution icon");
+                getLog().info("Handling high resolution icon");
                 transcode(_highResIcon, Density.mdpi, _highResIconBounds, new File("."), 512, 512, null);
             } catch (IOException e) {
                 getLog().error(e);
