@@ -1,6 +1,6 @@
 [
     {
-        "name" : "phone",
+        "name" : "phone_to_rename",
         "stretch" : {
             "x" : [
                 [3, 29]
