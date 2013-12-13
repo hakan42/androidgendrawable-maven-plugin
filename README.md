@@ -176,7 +176,7 @@ The plugin can be configured using the following options :
 ###### from
 
 Path to the directory that contains the SVG files to generate drawable from.  
-SVG files **MUST** be named according the following rules and **MUST** contain a density qualifier (mdpi, xhdpi, ...) :
+SVG files **MUST** be named according the following rules and **MUST** contain a density qualifier (mdpi,hdpi,...) :
 
 - **\w+(-{qualifier})+.svg**  
 
