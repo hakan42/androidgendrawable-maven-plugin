@@ -131,7 +131,7 @@ public class NinePatch {
      * @return
      */
     public static final int size(int start, int stop, int d, double ratio) {
-        return Math.min(d - start(start, stop, d, ratio), Math.max(1, (int) Math.floor((stop - start) * ratio)));
+        return Math.min(d - start(start, stop, d, ratio), Math.max(1, (int) Math.ceil((stop - start) * ratio)));
     }
     
 }

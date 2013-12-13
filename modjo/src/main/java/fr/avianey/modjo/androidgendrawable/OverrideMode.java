@@ -14,7 +14,7 @@ public enum OverrideMode {
             return false;
         } else {
             return src.lastModified() > dest.lastModified() 
-                    && (!isNinePatch || ninePatchConfig.lastModified() > dest.lastModified());
+                    || (isNinePatch && ninePatchConfig.lastModified() > dest.lastModified());
         }
     }
     
