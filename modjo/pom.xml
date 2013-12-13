@@ -72,7 +72,7 @@
                 <version>2.2.1</version>
                 <configuration>
                     <outputDirectory>${project.build.directory}</outputDirectory>
-                    <attach>false</attach>
+                    <attach>true</attach>
                 </configuration>
                 <executions>
                     <execution>
