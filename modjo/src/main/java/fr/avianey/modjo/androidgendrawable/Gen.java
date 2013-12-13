@@ -327,7 +327,7 @@ public class Gen extends AbstractMojo {
             .append(ninePatch != null ? ".9" : "")
             .append(".png")
             .toString();
-        if (override.override(svg, new File(finalName))) {
+        if (override.override(svg, new File(finalName), ninePatchConfig, ninePatch != null)) {
             if (ninePatch == null) {
                 // write file directly
                 OutputStream ostream = new FileOutputStream(finalName);
@@ -348,6 +348,11 @@ public class Gen extends AbstractMojo {
                 toNinePatch(istream, finalName, ninePatch, svg.getDensity().ratio(targetDensity));
             }
         } else {
+            getLog().debug(finalName + " last modified " + new File(finalName).lastModified());
+            getLog().debug(svg.getAbsolutePath() + " last modified " + svg.lastModified());
+            if (ninePatch != null) {
+                getLog().debug(ninePatchConfig.getAbsolutePath() + " last modified " + ninePatchConfig.lastModified());
+            }
             getLog().info(finalName + " already exists and is up to date... skiping generation!");
         }
     }
