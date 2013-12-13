@@ -5,13 +5,44 @@ Every application should provide [alternative resources](http://developer.androi
 
 This plugin supports any configuration qualifier available on the Android platform and can generate [NinePatch](http://developer.android.com/reference/android/graphics/NinePatch.html) drawable as well :-)
 
+-   [Sample](#sample)
+-   [Expected SVG file names](#expected-file-names)
+-   [SVG Bounding Box](#bounding-box)
+-   [9-Patch configuration](#9-patch-configuration)
+-   [Pom.xml configuration](#pomxml-configuration)
+-   [Plugin options](#plugin-options)
+-   [License](#license)
+
 ## Sample
 
-The sample application use this plugin to generate all of its drawables and illustrates the use of every single option of the plugin.
+The sample application use this plugin to generate all of its drawables and illustrates the use of every single option of the plugin.  
+
+    mvn gendrawable:gen
+
+###### Generates density specific PNG from one SVG file :
+![mdpi generated flag][flag-mdpi] => mdpi  
+![hdpi generated flag][flag-hdpi] => hdpi  
+![xhdpi generated flag][flag-xhdpi] => xhdpi  
+![xxhdpi generated flag][flag-xxhdpi] => xxhdpi  
+
+###### Generates PNG and qualified directories for you :
+![][svg-files] => input SVG files  
+![][generated] => generated directories  
+![][drawable-fr-land-xxxhdpi] => generated PNG in **drawable-fr-land-xxxhdpi**  
+![][drawable-land-xxxhdpi] => generated PNG in **drawable-land-xxxhdpi**  
+
+[generated]: http://avianey.github.io/androidgendrawable-maven-plugin/generated.png "Generated resource directories"
+[drawable-fr-land-xxxhdpi]: http://avianey.github.io/androidgendrawable-maven-plugin/drawable-fr-land-xxxhdpi.png "Landscape xxxhdpi french flag"
+[drawable-land-xxxhdpi]: http://avianey.github.io/androidgendrawable-maven-plugin/drawable-land-xxxhdpi.png "Landscape xxxhdpi USA flag"
+[flag-hdpi]: http://avianey.github.io/androidgendrawable-maven-plugin/flag-hdpi.png "Generated hdpi flag"
+[flag-mdpi]: http://avianey.github.io/androidgendrawable-maven-plugin/flag-mdpi.png "Generated mdpi flag"
+[flag-xhdpi]: http://avianey.github.io/androidgendrawable-maven-plugin/flag-xhdpi.png "Generated xhdpi flag"
+[flag-xxhdpi]: http://avianey.github.io/androidgendrawable-maven-plugin/flag-xxhdpi.png "Generated xxhdpi flags"
+[svg-files]: http://avianey.github.io/androidgendrawable-maven-plugin/svg-files.png "Input SVG files"
 
 ## Input SVG files 
 
-### Expected file name
+### Expected file names
 
 SVG file name must match the following pattern : **\w+(-{qualifier})+.svg**  
 -   the generated PNG will be name \w+.png or \w+.9.png if it's a 9-patch drawable
@@ -54,8 +85,8 @@ If you want a SVG file to be generated as a NinePatch PNG, you must provide a Ni
 [
     {
         "name" : "phone",  // \w+ part of the SVG file name
-        "qualifiers" : [ // optionnal qualifiers array that the (-{qualifier}) part of the SVG file name must contain 
-			"land"
+        "qualifiers" : [ // optionnal array of qualifiers to filter SVG input 
+			"land" // this config only apply to \w+.*-land.*.svg files
 		], 
         "stretch" : { // the stretch area configuration
             "x" : [ // segments of the top edge of the NinePatch
@@ -86,7 +117,7 @@ As shown in the sample maven project, if you have different SVG with the same na
 
 ## How to use the plugin
 
-### Maven installation
+### pom.xml configuration
 
 To use it in your Android Maven projects you need to add the following plugin dependency to your project pom.xml :
 
@@ -96,13 +127,13 @@ To use it in your Android Maven projects you need to add the following plugin de
     <plugin>
         <groupId>fr.avianey.modjo</groupId>
         <artifactId>androidgendrawable-maven-plugin</artifactId>
-		<version>1.0.0</version>
+        <version>1.0.0</version>
         <configuration>
             <!-- where to pick the svg -->
             <from>${project.basedir}/svg</from>
             <!-- where to generate them -->
             <to>${project.basedir}/res</to>
-            <!-- use key/value pairs to replace original resource names (key) by other names (value) -->
+            <!-- use key/value pairs to rename resources (key => value) -->
             <rename>
                 <phone_to_rename>phone</phone_to_rename>
             </rename>
@@ -138,11 +169,11 @@ To use it in your Android Maven projects you need to add the following plugin de
 </plugins>
 ```
 
-### Maven configuration
+### Plugin options
 
 The plugin can be configured using the following options : 
 
-#### from
+###### from
 
 Path to the directory that contains the SVG files to generate drawable from.  
 SVG files **MUST** be named according the following rules and **MUST** contain a density qualifier (mdpi, xhdpi, ...) :
@@ -155,20 +186,20 @@ Generated drawable will be named :
 
 The density qualifier provided in the SVG file name indicates that the Bounding Box size defined in the **<svg>** tag of the SVG file is the target size of the generated drawable for this density. Generated drawable for other densities are scaled according the **3:4:6:8:12:16** scaling ratio defined in the [Supporting Multiple Screens section](http://developer.android.com/guide/practices/screens_support.html) of the Android developers site.   
 
-#### to
+###### to
 
 Path to the Android res/ directory that contains the various drawable/ directories.
 
-#### createMissingDirectories
+###### createMissingDirectories
 
 Set it to "false" if you don't want the plugin to create missing drawable(-{qualifier})*/ directories.  
 The default value is set to "true".
 
-#### ninePatchConfig
+###### ninePatchConfig
 
 Path to the 9-Patch JSON configuration file.
 
-#### override
+###### override
 
 Whether or not already existing and up to date PNG should be override at build time :
 -   **always** : PNG are always recreated
@@ -176,12 +207,12 @@ Whether or not already existing and up to date PNG should be override at build t
 -   **ifModified** : PNG are recreated only if the SVG file is more recent than the existing PNG file
 Default value is set to **always**.
 
-#### rename
+###### rename
 
 Use this map to change the name of the generated drawable.  
 Note that names provided in the 9-patch configuration file applies to the **\w+** part of the SVG file name **BEFORE** any renaming.
 
-#### targetedDensities
+###### targetedDensities
 
 List of the desired densities for the generated drawable.  
 If not specified, a drawable is generate for each supported density qualifier.  
@@ -193,18 +224,19 @@ If not specified, a drawable is generate for each supported density qualifier.
 -   xxxhdpi
 -   tvdpi
 
-#### fallbackDensity
+###### fallbackDensity
 
 The density for unqualified drawable directories.  If set to "mdpi", mdpi PNG will be generated into /drawable and not /drawable-mdpi.  
 default value is **mdpi**.
 
-#### highResIcon
+###### highResIcon
 
 The name of the SVG resource to use to generate an **High-Res** icon for the Google Play.  
 The SVG **SHOULD** have a square Bounding Box (height = width) and will be generated into ${project.basedir}.
 
 ## License
 
+```
 Copyright 2013 Antoine Vianey  
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -218,3 +250,4 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+```
