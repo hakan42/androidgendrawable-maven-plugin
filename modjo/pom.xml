@@ -13,7 +13,7 @@
 	<name>AndroidGenDrawable Maven Plugin</name>
 	<url>https://github.com/avianey/androidgendrawable-maven-plugin</url>
     
-    <description>Manage and Generate 'classifier specific' PNG raster drawable from SVG at build time for Android projects.</description>
+    <description>Generates qualified density specific PNG drawables from SVG at build time for your Android projects.</description>
 
     <licenses>
         <license>
