@@ -9,11 +9,11 @@
 	<groupId>fr.avianey.modjo</groupId>
 	<artifactId>androidgendrawable-maven-plugin</artifactId>
 	<packaging>maven-plugin</packaging>
-	<version>1.0.0</version>
+	<version>1.0.0-SNAPSHOT</version>
 	<name>AndroidGenDrawable Maven Plugin</name>
 	<url>https://github.com/avianey/androidgendrawable-maven-plugin</url>
     
-    <description>Generates qualified density specific PNG drawables from SVG at build time for your Android projects.</description>
+    <description>Generates qualified, density specific PNG drawables from SVG at build time for your Android projects.</description>
 
     <licenses>
         <license>
@@ -66,6 +66,19 @@
 					<goalPrefix>gendrawable</goalPrefix>
 				</configuration>
 			</plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.9.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
@@ -140,7 +153,7 @@
         </dependency>
 	</dependencies>
 
-    <!-- mvn release:perform -Darguments=-Dgpg.passphrase=PASSPHRASE -->
+    <!-- mvn clean install release:perform -Darguments=-Dgpg.passphrase=PASSPHRASE -->
     <profiles>
         <profile>
             <id>release-sign-artifacts</id>
@@ -168,6 +181,12 @@
                     </plugin>
                 </plugins>
             </build>
+            <distributionManagement>
+                <repository>
+                    <id>sonatype</id>
+                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+                </repository>
+            </distributionManagement>
         </profile>
     </profiles>
 
