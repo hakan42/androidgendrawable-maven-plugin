@@ -28,7 +28,7 @@
         <url>https://github.com/avianey/androidgendrawable-maven-plugin</url>
         <developerConnection>scm:git:git@github.com/avianey/androidgendrawable-maven-plugin.git</developerConnection>
         <connection>scm:git:git://github.com/avianey/androidgendrawable-maven-plugin.git</connection>
-      <tag>HEAD</tag>
+        <tag>HEAD</tag>
   </scm>
 
     <issueManagement>
@@ -163,7 +163,12 @@
         </dependency>
 	</dependencies>
 
-    <!-- mvn clean install release:perform -Darguments=-Dgpg.passphrase=PASSPHRASE -->
+    <!-- 
+	mvn clean release:clean -s settings.xml
+	mvn release:prepare -s settings.xml -Darguments=
+	manual push
+	mvn release:perform -s settings.xml -Darguments=
+	-->
     <profiles>
         <profile>
             <id>release-sign-artifacts</id>
